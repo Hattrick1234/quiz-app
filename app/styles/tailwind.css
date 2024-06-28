@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+	h1 {
+		@apply pb-3 text-3xl font-bold;
+	}
 	:root {
 		/* --font-sans: here if you have one */
 		/* --font-mono: here if you got it... */
@@ -77,4 +80,21 @@
 
 		--ring: 217.2 32.6% 60%;
 	}
+}
+
+@layer components {
+	.link {
+		@apply items-center py-2 text-gray-800 hover:text-blue-600 focus:text-blue-600 focus:outline-none dark:text-gray-200 dark:hover:text-blue-500 dark:focus:text-blue-500;
+	}
+
+	.linkGekleurd {
+		@apply font-medium text-blue-600 hover:underline dark:text-blue-500;
+	}
+
+	/* .linkPrimary {
+		@apply text-blue-600 hover:underline hover:decoration-gray-800 dark:decoration-white;
+	}
+	.linkSecondary {
+		@apply inline-flex items-center gap-x-1 text-sm text-gray-800 hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-500;
+	} */
 }

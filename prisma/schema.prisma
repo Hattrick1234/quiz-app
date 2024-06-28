@@ -25,6 +25,32 @@ model User {
   roles       Role[]
   sessions    Session[]
   connections Connection[]
+  quizzes     Quiz[]
+}
+
+model Quiz {
+  id      String @id @default(cuid())
+  title   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  ownerId String
+
+  questions Question[]
+}
+
+model Question {
+  id        String @id @default(cuid())
+  question  String
+  answer    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  quizId String
 }
 
 model Note {

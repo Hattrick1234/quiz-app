@@ -1,14 +1,29 @@
 import { type MetaFunction } from '@remix-run/node'
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '#app/components/ui/tooltip.tsx'
-import { cn } from '#app/utils/misc.tsx'
-import { logos } from './logos/logos.ts'
+import { Link } from '@remix-run/react'
+import { Icon } from '#app/components/ui/icon.js'
 
 export const meta: MetaFunction = () => [{ title: 'Epic Notes' }]
+
+export default function Index() {
+	return (
+		<main>
+			<div className="grid h-16 place-items-center">
+				<h1 className="pb-10">Welcome to the quizz app!</h1>
+				<p className="flex flex-col gap-6">
+					<Link to="/quizzes" className="text-body-md underline">
+						<span>To the quizzes</span>
+						<Icon name="arrow-right"></Icon>
+					</Link>
+					{/* <Link to="/" className="text-body-md underline">
+						<Icon name="arrow-left">Back to home</Icon>
+					</Link> */}
+				</p>
+			</div>
+		</main>
+	)
+}
+
+/* Hieronder de oorspronkelijke code van de startapplicatie
 
 // Tailwind Grid cell classes lookup
 const columnClasses: Record<(typeof logos)[number]['column'], string> = {
@@ -99,3 +114,5 @@ export default function Index() {
 		</main>
 	)
 }
+
+*/

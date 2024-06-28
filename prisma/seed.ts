@@ -154,6 +154,18 @@ async function seed() {
 				create: { providerName: 'github', providerId: githubUser.profile.id },
 			},
 			roles: { connect: [{ name: 'admin' }, { name: 'user' }] },
+			quizzes: {
+				create: [
+					{
+						id: 'd22a197e',
+						title: 'Quiz Engels',
+					},
+					{
+						id: 'e23a197e',
+						title: 'Quiz Frans',
+					},
+				],
+			},
 			notes: {
 				create: [
 					{
