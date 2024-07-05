@@ -1,8 +1,8 @@
 // routes/api/update-questions.ts
 
 import { json } from '@remix-run/node'
-import { updateQuestions } from '#app/data/quiz.server.ts'
-import { type QuestionSummary } from '#app/types/index.ts'
+import { updateQuestions, addQuestion } from '#app/data/quiz.server.ts'
+import { type QuestionSummary } from '#app/types'
 
 export async function action({ request }: { request: Request }) {
 	const formData = await request.formData()
@@ -17,15 +17,60 @@ export async function action({ request }: { request: Request }) {
 	try {
 		questions = JSON.parse(questionsString) as QuestionSummary[]
 	} catch (error) {
-		console.error('Failed to parse questions:', error)
-		return json({ error: 'Failed to parse questions' }, { status: 400 })
+		return json(
+			{ error: 'Failed to parse questions', details: (error as Error).message },
+			{ status: 400 },
+		)
 	}
 
+	const updatePromises = questions.map(question => {
+		if (question.id) {
+			return updateQuestions(quizId, [question])
+		} else {
+			return addQuestion(quizId, question)
+		}
+	})
+
 	try {
-		await updateQuestions(quizId, questions)
+		await Promise.all(updatePromises)
 		return json({ success: true })
 	} catch (error) {
-		console.error('Failed to parse questions:', error)
-		return json({ error: 'Failed to update questions' }, { status: 500 })
+		return json(
+			{
+				error: 'Failed to update questions',
+				details: (error as Error).message,
+			},
+			{ status: 500 },
+		)
 	}
 }
+
+// import { json } from '@remix-run/node'
+// import { updateQuestions } from '#app/data/quiz.server.ts'
+// import { type QuestionSummary } from '#app/types/index.ts'
+
+// export async function action({ request }: { request: Request }) {
+// 	const formData = await request.formData()
+// 	const quizId = formData.get('quizId') as string
+// 	const questionsString = formData.get('questions') as string
+
+// 	if (!quizId || !questionsString) {
+// 		return json({ error: 'Invalid data' }, { status: 400 })
+// 	}
+
+// 	let questions: QuestionSummary[]
+// 	try {
+// 		questions = JSON.parse(questionsString) as QuestionSummary[]
+// 	} catch (error) {
+// 		console.error('Failed to parse questions:', error)
+// 		return json({ error: 'Failed to parse questions' }, { status: 400 })
+// 	}
+
+// 	try {
+// 		await updateQuestions(quizId, questions)
+// 		return json({ success: true })
+// 	} catch (error) {
+// 		console.error('Failed to parse questions:', error)
+// 		return json({ error: 'Failed to update questions' }, { status: 500 })
+// 	}
+// }

@@ -19,6 +19,17 @@ export async function updateQuestions(
 	await Promise.all(updatePromises)
 }
 
+export async function addQuestion(quizId: string, question: QuestionSummary) {
+	const newQuestion = await prisma.question.create({
+		data: {
+			quizId,
+			question: question.question,
+			answer: question.answer,
+		},
+	})
+	return newQuestion
+}
+
 export async function getQuizById(userId: string, quizId: string) {
 	return await prisma.quiz.findFirst({
 		where: {
