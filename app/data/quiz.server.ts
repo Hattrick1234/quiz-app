@@ -19,6 +19,21 @@ export async function updateQuestions(
 	await Promise.all(updatePromises)
 }
 
+// Functie om een specifieke vraag te verwijderen op basis van het ID
+export async function deleteQuestions(questionId: string) {
+	try {
+		await prisma.question.delete({
+			where: {
+				id: questionId,
+			},
+		})
+		return { success: true }
+	} catch (error) {
+		console.error('Error deleting question:', error)
+		throw new Error('Failed to delete question')
+	}
+}
+
 export async function addQuestion(quizId: string, question: QuestionSummary) {
 	const newQuestion = await prisma.question.create({
 		data: {
@@ -51,21 +66,3 @@ export async function getQuestionsByQuizId(quizId: string) {
 		},
 	})
 }
-
-// export async function updateQuestions(
-// 	quizId: string,
-// 	questions: { id: string; question: string; answer: string }[],
-// ) {
-// 	const updatePromises = questions.map(question =>
-// 		prisma.question.update({
-// 			where: { id: question.id },
-// 			data: {
-// 				question: question.question,
-// 				answer: question.answer,
-// 			},
-// 		}),
-// 	)
-// 	return await Promise.all(updatePromises)
-// }
-
-// Add other functions like addQuestion, deleteQuestion, etc.

@@ -2,7 +2,7 @@ import { type MetaFunction } from '@remix-run/node'
 import { Link } from '@remix-run/react'
 import { Icon } from '#app/components/ui/icon.js'
 
-export const meta: MetaFunction = () => [{ title: 'Epic Notes' }]
+export const meta: MetaFunction = () => [{ title: 'Quiz app' }]
 
 export default function Index() {
 	return (
@@ -11,7 +11,7 @@ export default function Index() {
 				<h1 className="pb-10">Welcome to the quizz app!</h1>
 				<p className="flex flex-col gap-6">
 					<Link to="/quizzes" className="text-body-md underline">
-						<span>To the quizzes</span>
+						<span>To the quizzes!</span>
 						<Icon name="arrow-right"></Icon>
 					</Link>
 					{/* <Link to="/" className="text-body-md underline">
