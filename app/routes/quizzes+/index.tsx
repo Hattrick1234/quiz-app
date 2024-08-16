@@ -54,12 +54,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	if (intent === 'delete') {
-		// const quizId = formData.get('quizId') as string
-
-		// if (!quizId) {
-		// 	return json({ error: 'Quiz ID is required' }, { status: 400 })
-		// }
-
 		await prisma.quiz.delete({
 			where: {
 				id: quizId,
@@ -140,7 +134,7 @@ export default function UsersRoute() {
 							</fetcher.Form>
 						) : (
 							<>
-								<Link to={quiz.id} className="link">
+								<Link to={quiz.id} className="text-blue-500 hover:underline">
 									<h2>{quiz.title}</h2>
 								</Link>
 								<div className="flex items-center">
@@ -162,6 +156,12 @@ export default function UsersRoute() {
 											Delete
 										</button>
 									</fetcher.Form>
+									<a
+										href={`/api/download-quiz?quizId=${quiz.id}`}
+										className="ml-4 rounded bg-blue-500 px-2 py-1 text-white"
+									>
+										Download CSV
+									</a>
 								</div>
 							</>
 						)}
