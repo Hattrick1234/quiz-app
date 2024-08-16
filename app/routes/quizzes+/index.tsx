@@ -9,6 +9,12 @@ import {
 import { Link, useLoaderData, useFetcher } from '@remix-run/react'
 import Papa from 'papaparse'
 import { useState } from 'react'
+import {
+	createQuiz,
+	createQuizWithQuestions,
+	deleteQuiz,
+	updateQuizTitle,
+} from '#app/data/quiz.server.ts'
 import { type CSVQuestion } from '#app/types/index.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { prisma } from '#app/utils/db.server.ts'
@@ -43,12 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			return json({ error: 'Title is required' }, { status: 400 })
 		}
 
-		const newQuiz = await prisma.quiz.create({
-			data: {
-				title,
-				ownerId: userId,
-			},
-		})
+		const newQuiz = await createQuiz(title, userId)
 
 		return json({ newQuiz })
 	}
@@ -100,15 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			)
 		}
 
-		const newQuiz = await prisma.quiz.create({
-			data: {
-				title,
-				ownerId: userId,
-				questions: {
-					create: questions,
-				},
-			},
-		})
+		const newQuiz = await createQuizWithQuestions(title, userId, questions)
 
 		return json({ newQuiz })
 	}
@@ -121,11 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	}
 
 	if (intent === 'delete') {
-		await prisma.quiz.delete({
-			where: {
-				id: quizId,
-			},
-		})
+		await deleteQuiz(quizId)
 
 		return json({ success: true })
 	}
@@ -135,15 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		if (typeof newTitle !== 'string' || !newTitle.trim()) {
 			return json({ error: 'Invalid title' }, { status: 400 })
 		}
-		await prisma.quiz.updateMany({
-			where: {
-				id: quizId,
-				ownerId: userId,
-			},
-			data: {
-				title: newTitle,
-			},
-		})
+		await updateQuizTitle(quizId, newTitle, userId)
 		return redirect('/quizzes') // Redirect to refresh the page
 	}
 

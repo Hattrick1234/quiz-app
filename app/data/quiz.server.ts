@@ -66,3 +66,52 @@ export async function getQuestionsByQuizId(quizId: string) {
 		},
 	})
 }
+
+export async function createQuiz(title: string, userId: string) {
+	return await prisma.quiz.create({
+		data: {
+			title,
+			ownerId: userId,
+		},
+	})
+}
+
+export async function createQuizWithQuestions(
+	title: string,
+	userId: string,
+	questions: { question: string; answer: string }[],
+) {
+	return await prisma.quiz.create({
+		data: {
+			title,
+			ownerId: userId,
+			questions: {
+				create: questions,
+			},
+		},
+	})
+}
+
+export async function deleteQuiz(quizId: string) {
+	return await prisma.quiz.delete({
+		where: {
+			id: quizId,
+		},
+	})
+}
+
+export async function updateQuizTitle(
+	quizId: string,
+	newTitle: string,
+	userId: string,
+) {
+	return await prisma.quiz.updateMany({
+		where: {
+			id: quizId,
+			ownerId: userId,
+		},
+		data: {
+			title: newTitle,
+		},
+	})
+}
