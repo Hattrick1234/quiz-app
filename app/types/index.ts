@@ -4,3 +4,8 @@ export type QuestionSummary = {
 	question: string
 	answer: string
 }
+
+export type CSVQuestion = {
+	question: string
+	answer: string
+}

@@ -1,3 +1,4 @@
+// import { Parser } from '@json2csv/plainjs' // Gebruik de Parser class
 import { type Quiz } from '@prisma/client'
 import {
 	json,
@@ -6,7 +7,9 @@ import {
 	type ActionFunctionArgs,
 } from '@remix-run/node'
 import { Link, useLoaderData, useFetcher } from '@remix-run/react'
+import Papa from 'papaparse'
 import { useState } from 'react'
+import { type CSVQuestion } from '#app/types/index.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { prisma } from '#app/utils/db.server.ts'
 
@@ -32,6 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const intent = formData.get('intent')
+	console.log(`Intent is: ${intent}`)
 
 	if (intent === 'create') {
 		const title = formData.get('title') as string
@@ -48,8 +52,71 @@ export async function action({ request }: ActionFunctionArgs) {
 
 		return json({ newQuiz })
 	}
+
+	if (intent === 'uploadCsv') {
+		const file = formData.get('csvFile') as File
+		console.log('File is: ' + file)
+		if (!file) {
+			return json({ error: 'CSV file is required' }, { status: 400 })
+		}
+
+		const content = await file.text()
+
+		// Check if file content is empty
+		if (!content.trim()) {
+			console.log('CSV file is leeg')
+			return json({ error: 'CSV file is empty' }, { status: 400 })
+		}
+
+		const title = file.name.replace('.csv', '')
+
+		let questions: CSVQuestion[]
+		try {
+			// Gebruik PapaParse om CSV-string naar JSON te converteren en typ de output correct
+			const parsedResult = Papa.parse<CSVQuestion>(content, { header: true })
+			questions = parsedResult.data // Pak de data uit de parse-resultaten
+
+			// Filter out empty rows
+			questions = questions.filter(q => q.question?.trim() && q.answer?.trim())
+
+			// Check if questions array is empty
+			if (questions.length === 0) {
+				console.log('Geen geldige vragen gevonden in de CSV file')
+				return json(
+					{ error: 'No valid questions found in CSV file' },
+					{ status: 400 },
+				)
+			}
+
+			//Converteer de questions en kijk of geldig question en answer formaten betreft
+			questions = questions.map(q => ({
+				question: q.question,
+				answer: q.answer,
+			}))
+		} catch (error) {
+			return json(
+				{ error: 'Failed to parse CSV', details: (error as Error).message },
+				{ status: 400 },
+			)
+		}
+
+		const newQuiz = await prisma.quiz.create({
+			data: {
+				title,
+				ownerId: userId,
+				questions: {
+					create: questions,
+				},
+			},
+		})
+
+		return json({ newQuiz })
+	}
+
+	//onderstaande acties hebben een quizid nodig stop als die er niet is
 	const quizId = formData.get('quizId') as string
 	if (!quizId) {
+		console.log('Quiz ID is nodig maar niet meegegeven')
 		return json({ error: 'Quiz ID is required' }, { status: 400 })
 	}
 
@@ -169,6 +236,7 @@ export default function UsersRoute() {
 				))}
 			</ul>
 
+			{/* Formulier voor het aanmaken van een nieuwe quiz */}
 			<fetcher.Form method="post" className="mt-8">
 				<label>
 					Nieuwe quiz:
@@ -186,6 +254,31 @@ export default function UsersRoute() {
 					className="ml-4 rounded bg-blue-500 px-4 py-2 text-white"
 				>
 					Create
+				</button>
+			</fetcher.Form>
+
+			{/* Formulier voor het uploaden van een CSV */}
+			<fetcher.Form
+				method="post"
+				encType="multipart/form-data"
+				className="mt-8"
+			>
+				<label>
+					Upload CSV:
+					<input
+						type="file"
+						name="csvFile"
+						accept=".csv"
+						className="ml-2 rounded border px-2 py-1"
+					/>
+				</label>
+				<button
+					type="submit"
+					name="intent"
+					value="uploadCsv"
+					className="ml-4 rounded bg-blue-500 px-4 py-2 text-white"
+				>
+					Upload CSV and Create Quiz
 				</button>
 			</fetcher.Form>
 		</div>
