@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData, Form } from '@remix-run/react'
+import { Link, useLoaderData, Form, useNavigate } from '@remix-run/react'
 import { type ChangeEvent, useState } from 'react'
 import {
 	getQuizById,
@@ -98,9 +98,15 @@ export default function QuizEditRoute() {
 	const [isEditing, setIsEditing] = useState(false)
 	const [editableQuestions, setEditableQuestions] =
 		useState<QuestionSummary[]>(questions)
+	const navigate = useNavigate()
 
 	const handleEditClick = () => {
 		setIsEditing(true)
+	}
+
+	const handleCancelClick = () => {
+		setEditableQuestions(questions) // Reset editable questions to the original loaded questions
+		setIsEditing(false) // Exit editing mode
 	}
 
 	const handleChange = (
@@ -230,15 +236,31 @@ export default function QuizEditRoute() {
 							>
 								Delete All
 							</button>
+							<button
+								type="button"
+								onClick={handleCancelClick}
+								className="ml-2 rounded bg-gray-500 px-4 py-2 text-white"
+							>
+								Close edititing
+							</button>
 						</>
 					) : (
-						<button
-							type="button"
-							onClick={handleEditClick}
-							className="rounded bg-blue-500 px-4 py-2 text-white"
-						>
-							Edit
-						</button>
+						<>
+							<button
+								type="button"
+								onClick={handleEditClick}
+								className="rounded bg-blue-500 px-4 py-2 text-white"
+							>
+								Edit
+							</button>
+							<button
+								type="button"
+								onClick={() => navigate(`/quizzes/${quizId}/start`)} // Nieuw: 'Start' knop met navigate functie
+								className="ml-2 rounded bg-green-500 px-4 py-2 text-white"
+							>
+								Start
+							</button>
+						</>
 					)}
 				</div>
 			</Form>
