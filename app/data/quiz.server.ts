@@ -1,5 +1,5 @@
 // app/data/quiz.server.ts
-import { type QuestionSummary } from '#app/types/index.ts'
+import { type QuestionOrder, type QuestionSummary } from '#app/types/index.ts'
 import { prisma } from '#app/utils/db.server.ts'
 
 export async function updateQuestions(
@@ -112,6 +112,42 @@ export async function updateQuizTitle(
 		},
 		data: {
 			title: newTitle,
+		},
+	})
+}
+
+// Functie om instellingen op te halen op basis van quizId en userId
+export async function getQuizSettings(userId: string, quizId: string) {
+	return await prisma.quizSetting.findUnique({
+		where: {
+			userId_quizId: {
+				userId,
+				quizId,
+			},
+		},
+	})
+}
+
+// Functie om instellingen op te slaan of bij te werken
+export async function saveQuizSettings(
+	userId: string,
+	quizId: string,
+	order: QuestionOrder,
+) {
+	return await prisma.quizSetting.upsert({
+		where: {
+			userId_quizId: {
+				userId,
+				quizId,
+			},
+		},
+		update: {
+			order,
+		},
+		create: {
+			userId,
+			quizId,
+			order,
 		},
 	})
 }

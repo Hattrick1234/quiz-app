@@ -1,13 +1,11 @@
 import { type LoaderFunctionArgs } from '@remix-run/node'
-import {
-	Form,
-	useNavigate,
-	useLoaderData,
-	Link,
-	useSearchParams,
-} from '@remix-run/react' // Add Link
+import { Form, useLoaderData, Link, redirect } from '@remix-run/react' // Add Link
 import { useState } from 'react'
-import { getQuizById } from '#app/data/quiz.server.js'
+import {
+	getQuizById,
+	getQuizSettings,
+	saveQuizSettings,
+} from '#app/data/quiz.server.js'
 import { type QuestionOrder } from '#app/types/index.ts' // Import the new type
 import { requireUserId } from '#app/utils/auth.server.js'
 
@@ -26,21 +24,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		throw new Response('Quiz not found', { status: 404 })
 	}
 
-	return { quiz }
+	// Haal de opgeslagen instellingen op
+	const settings = await getQuizSettings(userId, quizId)
+	const order = (settings?.order ?? 'random') as QuestionOrder
+
+	return { quiz, userId, order }
+}
+
+// Voeg de action toe voor het opslaan van instellingen
+export async function action({ request, params }: LoaderFunctionArgs) {
+	const userId = await requireUserId(request)
+	const quizId = params.quizId
+
+	const formData = await request.formData()
+	const order = formData.get('order') as QuestionOrder // Verkrijg de volgorde van de form
+
+	if (!quizId) {
+		throw new Response('Quiz ID is required', { status: 400 })
+	}
+
+	// Sla de quizinstellingen op
+	await saveQuizSettings(userId, quizId, order)
+
+	return redirect(`/quizzes/${quizId}/play`) // Verwijs naar de play-pagina
 }
 
 export default function QuizStartRoute() {
-	const { quiz } = useLoaderData<typeof loader>()
-	const navigate = useNavigate()
-
-	// Use the QuestionOrder type
-	const [searchParams] = useSearchParams()
-	const initialOrder = (searchParams.get('order') as QuestionOrder) || 'random'
-	const [order, setOrder] = useState<QuestionOrder>(initialOrder)
-
-	const handleStartQuiz = () => {
-		navigate(`/quizzes/${quiz.id}/play?order=${order}`) // Navigating to the play mode of the quiz
-	}
+	const { quiz, order } = useLoaderData<typeof loader>()
+	const [selectedOrder, setSelectedOrder] = useState<QuestionOrder>(order) // Gebruik de opgehaalde volgorde
+	// const [order, setOrder] = useState<QuestionOrder>('random')
 
 	return (
 		<div className="container mx-auto px-4">
@@ -57,8 +69,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="random"
-								checked={order === 'random'}
-								onChange={() => setOrder('random')}
+								checked={selectedOrder === 'random'}
+								onChange={() => setSelectedOrder('random')}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -74,8 +86,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="top-to-bottom"
-								checked={order === 'top-to-bottom'}
-								onChange={() => setOrder('top-to-bottom')}
+								checked={selectedOrder === 'top-to-bottom'}
+								onChange={() => setSelectedOrder('top-to-bottom')}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -91,8 +103,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="bottom-to-top"
-								checked={order === 'bottom-to-top'}
-								onChange={() => setOrder('bottom-to-top')}
+								checked={selectedOrder === 'bottom-to-top'}
+								onChange={() => setSelectedOrder('bottom-to-top')}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -106,8 +118,7 @@ export default function QuizStartRoute() {
 				</div>
 				<div className="my-4">
 					<button
-						type="button"
-						onClick={handleStartQuiz} // Use the handle function to navigate
+						type="submit"
 						className="rounded bg-blue-500 px-4 py-2 text-white"
 					>
 						Start Quiz

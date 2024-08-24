@@ -11,4 +11,5 @@ export type CSVQuestion = {
 }
 
 // Definieer het nieuwe type voor volgorde-opties
+
 export type QuestionOrder = 'random' | 'top-to-bottom' | 'bottom-to-top'

@@ -1,7 +1,12 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData, Link } from '@remix-run/react'
 import { type FormEvent, useState } from 'react'
-import { getQuizById, getQuestionsByQuizId } from '#app/data/quiz.server.ts'
+import {
+	getQuizById,
+	getQuestionsByQuizId,
+	getQuizSettings,
+} from '#app/data/quiz.server.ts'
+import { type QuestionOrder } from '#app/types/index.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -22,7 +27,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		throw new Response('Questions not found', { status: 404 })
 	}
 
-	return json({ quiz, questions })
+	// Haal de opgeslagen instellingen op
+	const settings = await getQuizSettings(userId, quizId)
+	const order = (settings?.order ?? 'random') as QuestionOrder
+
+	// Sorteer de vragen op basis van de geselecteerde volgorde
+	let sortedQuestions = [...questions] // Maak een kopie van de vragenlijst om te sorteren
+
+	if (order === 'random') {
+		sortedQuestions = sortedQuestions.sort(() => Math.random() - 0.5)
+	} else if (order === 'bottom-to-top') {
+		sortedQuestions = sortedQuestions.reverse()
+	}
+	// Voor 'top-to-bottom' hoeft niets te gebeuren, omdat de standaard volgorde al correct is.
+
+	return json({ quiz, questions: sortedQuestions })
 }
 
 export default function QuizPlayRoute() {
