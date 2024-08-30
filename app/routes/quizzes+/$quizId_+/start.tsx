@@ -6,7 +6,7 @@ import {
 	getQuizSettings,
 	saveQuizSettings,
 } from '#app/data/quiz.server.js'
-import { type QuestionOrder } from '#app/types/index.ts' // Import the new type
+import { QuestionOrder, QuestionReadOption } from '#app/types/index.ts' // Import the new type
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -26,9 +26,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	// Haal de opgeslagen instellingen op
 	const settings = await getQuizSettings(userId, quizId)
-	const order = (settings?.order ?? 'random') as QuestionOrder
+	const order = (settings?.order ?? QuestionOrder.Random) as QuestionOrder
+	const readOption = (settings?.readOption ??
+		QuestionReadOption.None) as QuestionReadOption
 
-	return { quiz, userId, order }
+	console.log(readOption)
+	return { quiz, userId, order, readOption }
 }
 
 // Voeg de action toe voor het opslaan van instellingen
@@ -38,21 +41,23 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 
 	const formData = await request.formData()
 	const order = formData.get('order') as QuestionOrder // Verkrijg de volgorde van de form
+	const readOption = formData.get('readOption') as QuestionReadOption // Verkrijg de voorleesoptie van de form
 
 	if (!quizId) {
 		throw new Response('Quiz ID is required', { status: 400 })
 	}
 
 	// Sla de quizinstellingen op
-	await saveQuizSettings(userId, quizId, order)
+	await saveQuizSettings(userId, quizId, order, readOption)
 
 	return redirect(`/quizzes/${quizId}/play`) // Verwijs naar de play-pagina
 }
 
 export default function QuizStartRoute() {
-	const { quiz, order } = useLoaderData<typeof loader>()
+	const { quiz, order, readOption } = useLoaderData<typeof loader>()
 	const [selectedOrder, setSelectedOrder] = useState<QuestionOrder>(order) // Gebruik de opgehaalde volgorde
-	// const [order, setOrder] = useState<QuestionOrder>('random')
+	const [selectedReadOption, setSelectedReadOption] =
+		useState<QuestionReadOption>(readOption)
 
 	return (
 		<div className="container mx-auto px-4">
@@ -69,8 +74,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="random"
-								checked={selectedOrder === 'random'}
-								onChange={() => setSelectedOrder('random')}
+								checked={selectedOrder === QuestionOrder.Random}
+								onChange={() => setSelectedOrder(QuestionOrder.Random)}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -86,8 +91,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="top-to-bottom"
-								checked={selectedOrder === 'top-to-bottom'}
-								onChange={() => setSelectedOrder('top-to-bottom')}
+								checked={selectedOrder === QuestionOrder.TopToBottom}
+								onChange={() => setSelectedOrder(QuestionOrder.TopToBottom)}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -103,8 +108,8 @@ export default function QuizStartRoute() {
 								name="order"
 								type="radio"
 								value="bottom-to-top"
-								checked={selectedOrder === 'bottom-to-top'}
-								onChange={() => setSelectedOrder('bottom-to-top')}
+								checked={selectedOrder === QuestionOrder.BottomToTop}
+								onChange={() => setSelectedOrder(QuestionOrder.BottomToTop)}
 								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
 							/>
 							<label
@@ -116,6 +121,75 @@ export default function QuizStartRoute() {
 						</div>
 					</div>
 				</div>
+
+				{/* Nieuwe sectie voor voorleesopties */}
+				<div className="my-4">
+					<label className="block text-sm font-medium text-gray-700">
+						Voorleesopties
+					</label>
+					<div className="mt-2">
+						<div className="flex items-center">
+							<input
+								id="none"
+								name="readOption"
+								type="radio"
+								value="none"
+								checked={selectedReadOption === QuestionReadOption.None}
+								onChange={() => setSelectedReadOption(QuestionReadOption.None)}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor="none"
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Niet voorlezen
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id="read-with-question"
+								name="readOption"
+								type="radio"
+								value="read-with-question"
+								checked={
+									selectedReadOption === QuestionReadOption.ReadWithQuestion
+								}
+								onChange={() =>
+									setSelectedReadOption(QuestionReadOption.ReadWithQuestion)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor="read-with-question"
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Voorlezen en vraag tonen
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id="read-without-question"
+								name="readOption"
+								type="radio"
+								value="read-without-question"
+								checked={
+									selectedReadOption === QuestionReadOption.ReadWithoutQuestion
+								}
+								onChange={() =>
+									setSelectedReadOption(QuestionReadOption.ReadWithoutQuestion)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor="read-without-question"
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Voorlezen zonder vraag tonen (dictee)
+							</label>
+						</div>
+					</div>
+				</div>
+
 				<div className="my-4">
 					<button
 						type="submit"

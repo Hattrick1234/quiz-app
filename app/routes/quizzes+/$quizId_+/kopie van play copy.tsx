@@ -1,12 +1,12 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData, Form, useNavigate } from '@remix-run/react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
 	getQuestionsByQuizId,
 	getQuizById,
 	getQuizSettings,
 } from '#app/data/quiz.server.js'
-import { QuestionOrder, QuestionReadOption } from '#app/types/index.ts'
+import { type QuestionOrder } from '#app/types/index.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,23 +29,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	}
 
 	const settings = await getQuizSettings(userId, quizId)
-	const order = (settings?.order || QuestionOrder.Random) as QuestionOrder
-	const readOption = (settings?.readOption ||
-		QuestionReadOption.None) as QuestionReadOption
+	const order = (settings?.order || 'random') as QuestionOrder
 
 	// Sorteer de vragen op basis van de gekozen volgorde
 	let sortedQuestions = [...questions]
-	if (order === QuestionOrder.Random) {
+	if (order === 'random') {
 		sortedQuestions = sortedQuestions.sort(() => Math.random() - 0.5)
-	} else if (order === QuestionOrder.BottomToTop) {
+	} else if (order === 'bottom-to-top') {
 		sortedQuestions = sortedQuestions.reverse()
 	}
 
-	return json({ quiz, sortedQuestions, readOption })
+	return json({ quiz, sortedQuestions })
 }
 
 export default function QuizPlayRoute() {
-	const { quiz, sortedQuestions, readOption } = useLoaderData<typeof loader>()
+	const { quiz, sortedQuestions } = useLoaderData<typeof loader>()
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 	const [userAnswer, setUserAnswer] = useState('')
 	const [feedback, setFeedback] = useState<string | null>(null)
@@ -67,18 +65,6 @@ export default function QuizPlayRoute() {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
 	}
-
-	// Effect om de vraag automatisch voor te lezen op basis van readOption
-	useEffect(() => {
-		if (readOption === QuestionReadOption.ReadWithQuestion && currentQuestion) {
-			handleReadQuestion()
-		} else if (
-			readOption === QuestionReadOption.ReadWithoutQuestion &&
-			currentQuestion
-		) {
-			handleReadQuestion()
-		}
-	}, [currentQuestionIndex, readOption, currentQuestion])
 
 	const handleAnswerSubmit = (event: React.FormEvent) => {
 		event.preventDefault()
@@ -108,11 +94,7 @@ export default function QuizPlayRoute() {
 			{hasMoreQuestions ? (
 				currentQuestion ? (
 					<div>
-						{/* <h2 className="my-4 text-xl">{currentQuestion.question}</h2> */}
-						{/* Toon vraag afhankelijk van de voorleesoptie */}
-						{readOption !== QuestionReadOption.ReadWithoutQuestion && (
-							<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
-						)}
+						<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
 						<button
 							onClick={handleReadQuestion}
 							className="mb-4 flex items-center rounded bg-green-500 px-4 py-2 text-white"

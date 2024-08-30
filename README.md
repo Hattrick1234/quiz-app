@@ -1,3 +1,13 @@
+Lokaal installeren en draaien door:
+
+- zorg ervoor dat je npm hebt geinstalleerd op je computer
+- in een terminal: npm install uitvoeren
+- in een terminal: npm run dev
+- ga naar de opgestarte link in je terminal om de applicatie te starten, veelal
+  http://localhost:3000
+
+Gebaseerd op The Epic Stack zie hieronder.
+
 <div align="center">
   <h1 align="center"><a href="https://www.epicweb.dev/epic-stack">The Epic Stack 🚀</a></h1>
   <strong align="center">

@@ -63,6 +63,7 @@ model QuizSetting {
   quiz   Quiz   @relation(fields: [quizId], references: [id])
 
   order  String @default("random")
+  readOption String @default("none")
 
   // Optioneel: andere spelinstellingen
   // andereInstelling Int? 
