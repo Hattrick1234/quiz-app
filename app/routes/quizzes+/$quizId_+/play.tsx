@@ -58,7 +58,7 @@ export default function QuizPlayRoute() {
 			? sortedQuestions[currentQuestionIndex]
 			: null
 
-	// Functie om vraag voor te lezen
+	// Functie om vraag voor te lezen (kan niet aangeroepen worden in de useEffect, dan komt er een ES-lint foutmelding)
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
@@ -70,15 +70,21 @@ export default function QuizPlayRoute() {
 
 	// Effect om de vraag automatisch voor te lezen op basis van readOption
 	useEffect(() => {
-		if (readOption === QuestionReadOption.ReadWithQuestion && currentQuestion) {
-			handleReadQuestion()
-		} else if (
-			readOption === QuestionReadOption.ReadWithoutQuestion &&
-			currentQuestion
-		) {
-			handleReadQuestion()
+		// Controleer of huidige vraag beschikbaar is en spraakweergave wordt ondersteund
+		if (currentQuestion && 'speechSynthesis' in window) {
+			// Check de optie voor het voorlezen van de vraag
+			if (
+				readOption === QuestionReadOption.ReadWithQuestion ||
+				readOption === QuestionReadOption.ReadWithoutQuestion
+			) {
+				// Maak en spreek de uitspraak
+				const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
+				window.speechSynthesis.speak(utterance)
+			}
+		} else if (!('speechSynthesis' in window)) {
+			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
-	}, [currentQuestionIndex, readOption, currentQuestion])
+	}, [currentQuestion, readOption]) // Vereenvoudigde afhankelijkheden
 
 	const handleAnswerSubmit = (event: React.FormEvent) => {
 		event.preventDefault()
