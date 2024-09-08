@@ -62,7 +62,12 @@ export default function QuizPlayRoute() {
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
+			utterance.lang = 'fr-FR' // Stel de taal in
 			window.speechSynthesis.speak(utterance)
+
+			// const utterance2 = new SpeechSynthesisUtterance('Bonjour, comment ça va?')
+			// utterance2.lang = 'fr-FR'
+			// speechSynthesis.speak(utterance2)
 		} else {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
@@ -79,6 +84,7 @@ export default function QuizPlayRoute() {
 			) {
 				// Maak en spreek de uitspraak
 				const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
+				utterance.lang = 'fr-FR' // Stel de taal in
 				window.speechSynthesis.speak(utterance)
 			}
 		} else if (!('speechSynthesis' in window)) {
@@ -86,7 +92,32 @@ export default function QuizPlayRoute() {
 		}
 	}, [currentQuestion, readOption]) // Vereenvoudigde afhankelijkheden
 
-	const handleAnswerSubmit = (event: React.FormEvent) => {
+	// const handleAnswerSubmit = (event: React.FormEvent) => {
+	// 	event.preventDefault()
+
+	// 	if (currentQuestion) {
+	// 		if (
+	// 			userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
+	// 		) {
+	// 			setFeedback('Correct!')
+	// 		} else {
+	// 			let feedbackMessage =
+	// 				'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
+	// 			feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
+
+	// 			setFeedback(feedbackMessage)
+	// 		}
+
+	// 		if (currentQuestionIndex < sortedQuestions.length - 1) {
+	// 			setCurrentQuestionIndex(prevIndex => prevIndex + 1)
+	// 			setUserAnswer('')
+	// 		} else {
+	// 			setHasMoreQuestions(false)
+	// 		}
+	// 	}
+	// }
+
+	const handleAnswerSubmit = async (event: React.FormEvent) => {
 		event.preventDefault()
 
 		if (currentQuestion) {
@@ -95,14 +126,27 @@ export default function QuizPlayRoute() {
 			) {
 				setFeedback('Correct!')
 			} else {
-				setFeedback(`Fout! Het juiste antwoord is: ${currentQuestion.answer}`)
+				// setFeedback(`Fout! Het juiste antwoord is: ${currentQuestion.answer}`)
+
+				let feedbackMessage =
+					'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
+				feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
+
+				setFeedback(feedbackMessage)
 			}
 
+			// Wacht even voordat je de quiz als voltooid markeert
 			if (currentQuestionIndex < sortedQuestions.length - 1) {
 				setCurrentQuestionIndex(prevIndex => prevIndex + 1)
 				setUserAnswer('')
 			} else {
-				setHasMoreQuestions(false)
+				// Gebruik een korte vertraging om feedback weer te geven
+				setTimeout(() => {
+					setFeedback(prevFeedback =>
+						prevFeedback ? prevFeedback + '\nQuiz voltooid!' : 'Quiz voltooid!',
+					)
+					setHasMoreQuestions(false)
+				}, 3500) // Vertraging van 3,5 seconden
 			}
 		}
 	}
@@ -152,7 +196,11 @@ export default function QuizPlayRoute() {
 							{/* </div> */}
 						</Form>
 
-						{feedback && <p className="mt-4">{feedback}</p>}
+						{feedback && (
+							<p className="mt-4 whitespace-pre-wrap text-base font-normal leading-relaxed text-gray-700">
+								{feedback}
+							</p>
+						)}
 					</div>
 				) : (
 					<p>Geen vragen beschikbaar.</p>

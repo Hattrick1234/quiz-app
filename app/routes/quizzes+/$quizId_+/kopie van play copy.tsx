@@ -1,12 +1,12 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData, Form, useNavigate } from '@remix-run/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	getQuestionsByQuizId,
 	getQuizById,
 	getQuizSettings,
 } from '#app/data/quiz.server.js'
-import { type QuestionOrder } from '#app/types/index.ts'
+import { QuestionOrder, QuestionReadOption } from '#app/types/index.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,21 +29,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	}
 
 	const settings = await getQuizSettings(userId, quizId)
-	const order = (settings?.order || 'random') as QuestionOrder
+	const order = (settings?.order || QuestionOrder.Random) as QuestionOrder
+	const readOption = (settings?.readOption ||
+		QuestionReadOption.None) as QuestionReadOption
 
 	// Sorteer de vragen op basis van de gekozen volgorde
 	let sortedQuestions = [...questions]
-	if (order === 'random') {
+	if (order === QuestionOrder.Random) {
 		sortedQuestions = sortedQuestions.sort(() => Math.random() - 0.5)
-	} else if (order === 'bottom-to-top') {
+	} else if (order === QuestionOrder.BottomToTop) {
 		sortedQuestions = sortedQuestions.reverse()
 	}
 
-	return json({ quiz, sortedQuestions })
+	return json({ quiz, sortedQuestions, readOption })
 }
 
 export default function QuizPlayRoute() {
-	const { quiz, sortedQuestions } = useLoaderData<typeof loader>()
+	const { quiz, sortedQuestions, readOption } = useLoaderData<typeof loader>()
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 	const [userAnswer, setUserAnswer] = useState('')
 	const [feedback, setFeedback] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export default function QuizPlayRoute() {
 			? sortedQuestions[currentQuestionIndex]
 			: null
 
-	// Functie om vraag voor te lezen
+	// Functie om vraag voor te lezen (kan niet aangeroepen worden in de useEffect, dan komt er een ES-lint foutmelding)
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
@@ -65,6 +67,24 @@ export default function QuizPlayRoute() {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
 	}
+
+	// Effect om de vraag automatisch voor te lezen op basis van readOption
+	useEffect(() => {
+		// Controleer of huidige vraag beschikbaar is en spraakweergave wordt ondersteund
+		if (currentQuestion && 'speechSynthesis' in window) {
+			// Check de optie voor het voorlezen van de vraag
+			if (
+				readOption === QuestionReadOption.ReadWithQuestion ||
+				readOption === QuestionReadOption.ReadWithoutQuestion
+			) {
+				// Maak en spreek de uitspraak
+				const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
+				window.speechSynthesis.speak(utterance)
+			}
+		} else if (!('speechSynthesis' in window)) {
+			alert('Uw browser ondersteunt geen spraakweergave.')
+		}
+	}, [currentQuestion, readOption]) // Vereenvoudigde afhankelijkheden
 
 	const handleAnswerSubmit = (event: React.FormEvent) => {
 		event.preventDefault()
@@ -94,7 +114,11 @@ export default function QuizPlayRoute() {
 			{hasMoreQuestions ? (
 				currentQuestion ? (
 					<div>
-						<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
+						{/* <h2 className="my-4 text-xl">{currentQuestion.question}</h2> */}
+						{/* Toon vraag afhankelijk van de voorleesoptie */}
+						{readOption !== QuestionReadOption.ReadWithoutQuestion && (
+							<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
+						)}
 						<button
 							onClick={handleReadQuestion}
 							className="mb-4 flex items-center rounded bg-green-500 px-4 py-2 text-white"
