@@ -1,4 +1,3 @@
-// import { Parser } from '@json2csv/plainjs' // Gebruik de Parser class
 import { type Quiz } from '@prisma/client'
 import {
 	json,
@@ -13,9 +12,9 @@ import {
 	createQuiz,
 	createQuizWithQuestions,
 	deleteQuiz,
-	updateQuizTitle,
+	updateQuiz,
 } from '#app/data/quiz.server.ts'
-import { type CSVQuestion } from '#app/types/index.js'
+import { type QuizType, type CSVQuestion } from '#app/types/index.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { prisma } from '#app/utils/db.server.ts'
 
@@ -26,12 +25,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		select: {
 			id: true,
 			title: true,
-			createdAt: true,
+			createdAt: false,
+			updatedAt: false,
+			questionLanguage: true,
+			answerLanguage: true,
 		},
 		where: {
 			ownerId: userId,
 		},
 	})
+
+	// Zorg ervoor dat createdAt en updatedAt worden omgezet naar Date objecten
+	// const quizzesWithDateObjects = quizzes.map(quiz => ({
+	// 	...quiz,
+	// 	createdAt: new Date(quiz.createdAt),
+	// 	updatedAt: new Date(quiz.updatedAt),
+	// }))
 
 	return json(quizzes) // Retourneert de array van quizzes direct
 }
@@ -41,15 +50,23 @@ export async function action({ request }: ActionFunctionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const intent = formData.get('intent')
+	const defaultLanguage = 'nl'
 	console.log(`Intent is: ${intent}`)
 
 	if (intent === 'create') {
 		const title = formData.get('title') as string
+		const questionLanguage = formData.get('questionLanguage') as string
+		const answerLanguage = formData.get('answerLanguage') as string
 		if (!title) {
 			return json({ error: 'Title is required' }, { status: 400 })
 		}
 
-		const newQuiz = await createQuiz(title, userId)
+		const newQuiz = await createQuiz(
+			title,
+			userId,
+			questionLanguage,
+			answerLanguage,
+		)
 
 		return json({ newQuiz })
 	}
@@ -101,7 +118,13 @@ export async function action({ request }: ActionFunctionArgs) {
 			)
 		}
 
-		const newQuiz = await createQuizWithQuestions(title, userId, questions)
+		const newQuiz = await createQuizWithQuestions(
+			title,
+			userId,
+			defaultLanguage,
+			defaultLanguage,
+			questions,
+		)
 
 		return json({ newQuiz })
 	}
@@ -121,10 +144,27 @@ export async function action({ request }: ActionFunctionArgs) {
 
 	if (intent === 'update') {
 		const newTitle = formData.get('newTitle')
+		const newQuestionLanguage = formData.get('newQuestionLanguage')
+		const newAnswerLanguage = formData.get('newAnswerLanguage')
+		console.log(newQuestionLanguage)
+		console.log(newAnswerLanguage)
 		if (typeof newTitle !== 'string' || !newTitle.trim()) {
 			return json({ error: 'Invalid title' }, { status: 400 })
 		}
-		await updateQuizTitle(quizId, newTitle, userId)
+		if (typeof newQuestionLanguage !== 'string' || !newTitle.trim()) {
+			return json({ error: 'Invalid questionLanguag' }, { status: 400 })
+		}
+		if (typeof newAnswerLanguage !== 'string' || !newTitle.trim()) {
+			return json({ error: 'Invalid answerLanguage' }, { status: 400 })
+		}
+
+		await updateQuiz(
+			quizId,
+			newTitle,
+			userId,
+			newQuestionLanguage,
+			newAnswerLanguage,
+		)
 		return redirect('/quizzes') // Redirect to refresh the page
 	}
 
@@ -136,15 +176,21 @@ export default function UsersRoute() {
 	const fetcher = useFetcher()
 	const [editingQuizId, setEditingQuizId] = useState<string | null>(null)
 	const [newTitle, setNewTitle] = useState<string>('')
+	const [questionLanguage, setQuestionLanguage] = useState<string>('nl')
+	const [answerLanguage, setAnswerLanguage] = useState<string>('nl')
 
-	const handleEditClick = (quizId: string, currentTitle: string) => {
-		setEditingQuizId(quizId)
-		setNewTitle(currentTitle)
+	const handleEditClick = (quiz: QuizType) => {
+		setEditingQuizId(quiz.id)
+		setNewTitle(quiz.title)
+		setQuestionLanguage(quiz.questionLanguage) // Vul de huidige vraagtaal in
+		setAnswerLanguage(quiz.answerLanguage)
 	}
 
 	const handleCancelEdit = () => {
 		setEditingQuizId(null)
 		setNewTitle('')
+		setQuestionLanguage('nl') // Reset naar default taal
+		setAnswerLanguage('nl') // Reset naar default taal
 	}
 
 	return (
@@ -164,6 +210,28 @@ export default function UsersRoute() {
 									onChange={e => setNewTitle(e.target.value)}
 									className="rounded border px-2 py-1"
 								/>
+								{/* Taal dropdown voor vraag */}
+								<select
+									name="newQuestionLanguage"
+									value={questionLanguage}
+									onChange={e => setQuestionLanguage(e.target.value)}
+									className="ml-2 rounded border px-2 py-1"
+								>
+									<option value="nl">Nederlands</option>
+									<option value="en">Engels</option>
+									<option value="fr">Frans</option>
+								</select>
+								{/* Taal dropdown voor antwoord */}
+								<select
+									name="newAnswerLanguage"
+									value={answerLanguage}
+									onChange={e => setAnswerLanguage(e.target.value)}
+									className="ml-2 rounded border px-2 py-1"
+								>
+									<option value="nl">Nederlands</option>
+									<option value="en">Engels</option>
+									<option value="fr">Frans</option>
+								</select>
 								<button
 									type="submit"
 									name="intent"
@@ -177,7 +245,7 @@ export default function UsersRoute() {
 									onClick={handleCancelEdit}
 									className="ml-2 rounded bg-gray-500 px-4 py-2 text-white"
 								>
-									Cancel
+									Close editing
 								</button>
 							</fetcher.Form>
 						) : (
@@ -188,7 +256,7 @@ export default function UsersRoute() {
 								<div className="flex items-center">
 									<button
 										type="button"
-										onClick={() => handleEditClick(quiz.id, quiz.title)}
+										onClick={() => handleEditClick(quiz)}
 										className="ml-4 rounded bg-yellow-500 px-2 py-1 text-white"
 									>
 										Edit
@@ -227,6 +295,33 @@ export default function UsersRoute() {
 						placeholder="Titel van de quiz"
 						className="ml-2 rounded border px-2 py-1"
 					/>
+				</label>
+				{/* Voeg taalselectie toe voor de vragen */}
+				<label className="ml-4">
+					Taal van vragen:
+					<select
+						name="questionLanguage"
+						className="ml-2 rounded border px-2 py-1"
+					>
+						<option value="nl">Nederlands</option>
+						<option value="en">Engels</option>
+						<option value="fr">Frans</option>
+						<option value="de">Duits</option>
+					</select>
+				</label>
+
+				{/* Voeg taalselectie toe voor de antwoorden */}
+				<label className="ml-4">
+					Taal van antwoorden:
+					<select
+						name="answerLanguage"
+						className="ml-2 rounded border px-2 py-1"
+					>
+						<option value="nl">Nederlands</option>
+						<option value="en">Engels</option>
+						<option value="fr">Frans</option>
+						<option value="de">Duits</option>
+					</select>
 				</label>
 				<button
 					type="submit"

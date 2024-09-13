@@ -41,6 +41,9 @@ model Quiz {
 
   questions Question[]
   quizSetting QuizSetting[]
+
+  questionLanguage String @default("nl")
+  answerLanguage   String @default("nl")
 }
 
 model Question {

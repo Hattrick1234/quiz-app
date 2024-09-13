@@ -62,12 +62,8 @@ export default function QuizPlayRoute() {
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
-			utterance.lang = 'fr-FR' // Stel de taal in
+			utterance.lang = quiz.questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
 			window.speechSynthesis.speak(utterance)
-
-			// const utterance2 = new SpeechSynthesisUtterance('Bonjour, comment ça va?')
-			// utterance2.lang = 'fr-FR'
-			// speechSynthesis.speak(utterance2)
 		} else {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
@@ -84,38 +80,13 @@ export default function QuizPlayRoute() {
 			) {
 				// Maak en spreek de uitspraak
 				const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
-				utterance.lang = 'fr-FR' // Stel de taal in
+				utterance.lang = quiz.questionLanguage // 'fr-FR' // Stel de taal in
 				window.speechSynthesis.speak(utterance)
 			}
 		} else if (!('speechSynthesis' in window)) {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
 	}, [currentQuestion, readOption]) // Vereenvoudigde afhankelijkheden
-
-	// const handleAnswerSubmit = (event: React.FormEvent) => {
-	// 	event.preventDefault()
-
-	// 	if (currentQuestion) {
-	// 		if (
-	// 			userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
-	// 		) {
-	// 			setFeedback('Correct!')
-	// 		} else {
-	// 			let feedbackMessage =
-	// 				'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
-	// 			feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
-
-	// 			setFeedback(feedbackMessage)
-	// 		}
-
-	// 		if (currentQuestionIndex < sortedQuestions.length - 1) {
-	// 			setCurrentQuestionIndex(prevIndex => prevIndex + 1)
-	// 			setUserAnswer('')
-	// 		} else {
-	// 			setHasMoreQuestions(false)
-	// 		}
-	// 	}
-	// }
 
 	const handleAnswerSubmit = async (event: React.FormEvent) => {
 		event.preventDefault()

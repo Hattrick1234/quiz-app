@@ -71,11 +71,18 @@ export async function getQuestionsByQuizId(quizId: string) {
 	})
 }
 
-export async function createQuiz(title: string, userId: string) {
+export async function createQuiz(
+	title: string,
+	userId: string,
+	questionLanguage: string,
+	answerLanguage: string,
+) {
 	return await prisma.quiz.create({
 		data: {
 			title,
 			ownerId: userId,
+			questionLanguage,
+			answerLanguage,
 		},
 	})
 }
@@ -83,12 +90,16 @@ export async function createQuiz(title: string, userId: string) {
 export async function createQuizWithQuestions(
 	title: string,
 	userId: string,
+	questionLanguage: string,
+	answerLanguage: string,
 	questions: { question: string; answer: string }[],
 ) {
 	return await prisma.quiz.create({
 		data: {
 			title,
 			ownerId: userId,
+			questionLanguage,
+			answerLanguage,
 			questions: {
 				create: questions,
 			},
@@ -104,10 +115,12 @@ export async function deleteQuiz(quizId: string) {
 	})
 }
 
-export async function updateQuizTitle(
+export async function updateQuiz(
 	quizId: string,
 	newTitle: string,
 	userId: string,
+	questionLanguage: string,
+	answerLanguage: string,
 ) {
 	return await prisma.quiz.updateMany({
 		where: {
@@ -116,6 +129,8 @@ export async function updateQuizTitle(
 		},
 		data: {
 			title: newTitle,
+			questionLanguage,
+			answerLanguage,
 		},
 	})
 }
