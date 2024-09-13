@@ -86,7 +86,7 @@ export default function QuizPlayRoute() {
 		} else if (!('speechSynthesis' in window)) {
 			alert('Uw browser ondersteunt geen spraakweergave.')
 		}
-	}, [currentQuestion, readOption]) // Vereenvoudigde afhankelijkheden
+	}, [currentQuestion, readOption, quiz.questionLanguage]) // Vereenvoudigde afhankelijkheden
 
 	const handleAnswerSubmit = async (event: React.FormEvent) => {
 		event.preventDefault()
