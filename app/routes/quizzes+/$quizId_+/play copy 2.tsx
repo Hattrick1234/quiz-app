@@ -109,131 +109,43 @@ export default function QuizPlayRoute() {
 		}
 	}, [currentQuestion, readOption, quiz.questionLanguage]) // Vereenvoudigde afhankelijkheden
 
-	const handleAnswerSubmit = async (event: React.FormEvent) => {
-		event.preventDefault()
-
-		if (currentQuestion) {
-			if (
-				userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
-			) {
-				setFeedback('Correct!')
-
-				// Verwijder correct beantwoorde vraag uit de lijst van foute antwoorden
-				setWrongAnswers(prevWrongAnswers =>
-					prevWrongAnswers.filter(w => w.id !== currentQuestion.id),
-				)
-			} else {
-				// Voeg fout antwoord toe aan de lijst van foute antwoorden
-				setWrongAnswers(prev => {
-					const isAlreadyInWrongAnswers = prev.some(
-						wrongAnswer => wrongAnswer.id === currentQuestion.id,
-					)
-
-					if (!isAlreadyInWrongAnswers) {
-						return [
-							...prev,
-							{
-								id: currentQuestion.id,
-								question: currentQuestion.question,
-								userAnswer: userAnswer.trim(),
-								correctAnswer: currentQuestion.answer,
-							},
-						]
-					}
-
-					return prev
-				})
-
-				const feedbackMessage = `Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
-				setFeedback(feedbackMessage)
-			}
-
-			// Ga naar de volgende vraag of herstart met foute antwoorden
-			if (currentQuestionIndex < questionsToDisplay.length - 1) {
-				setCurrentQuestionIndex(prevIndex => prevIndex + 1)
-				setUserAnswer('')
-			} else {
-				if (wrongAnswers.length > 0) {
-					setRetrying(true)
-					const newQuestionsToDisplay = wrongAnswers.map(a => ({
-						id: a.id,
-						question: a.question,
-						answer: a.correctAnswer,
-					}))
-					setQuestionsToDisplay(newQuestionsToDisplay)
-					setCurrentQuestionIndex(0)
-					setUserAnswer('')
-					setFeedback(null)
-					setHasMoreQuestions(true)
-				} else {
-					setTimeout(() => {
-						setFeedback(prevFeedback =>
-							prevFeedback
-								? prevFeedback + '\nQuiz voltooid!'
-								: 'Quiz voltooid!',
-						)
-						setHasMoreQuestions(false)
-					}, 3000)
-				}
-			}
-		}
-	}
-
 	// const handleAnswerSubmit = async (event: React.FormEvent) => {
 	// 	event.preventDefault()
-	// 	// console.log('question to display:')
-	// 	// console.log(questionsToDisplay)
-	// 	// console.log('currentQuestion:')
-	// 	// console.log(currentQuestion)
 
 	// 	if (currentQuestion) {
 	// 		if (
 	// 			userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
 	// 		) {
 	// 			setFeedback('Correct!')
-	// 			//mogelijk verwijdert hij niet goed of hij verwijdert wel maar ziet het nog niet en pas later ziet hij bij 2e ronde?
-	// 			setWrongAnswers(prevWrongAnswers =>
-	// 				prevWrongAnswers.filter(w => w.question !== currentQuestion.question),
-	// 			)
 
-	// 			// console.log(`retrying: ${retrying}`)
-	// 			// if (retrying) {
-	// 			// 	console.log(
-	// 			// 		'voordat wrong answers wordt aangepast ziet het er zo uit',
-	// 			// 	)
-	// 			// 	console.log(wrongAnswers)
-	// 			// 	console.log(`currentQuestion = ${currentQuestion.question}`)
-	// 			// 	// Verwijder de vraag uit wrongAnswers als het correct is beantwoord
-	// 			// 	setWrongAnswers(prevWrongAnswers =>
-	// 			// 		prevWrongAnswers.filter(
-	// 			// 			w => w.question !== currentQuestion.question,
-	// 			// 		),
-	// 			// 	)
-	// 			// }
-	// 			// console.log(
-	// 			// 	'bij goed antwoord moet wrong answers nu een minder bevatten',
-	// 			// )
-	// 			// console.log(wrongAnswers)
-	// 		} else {
-	// 			// Voeg fout antwoord toe aan de lijst van foute antwoorden
-	// 			// setWrongAnswers(prev => [
-	// 			// 	...prev,
-	// 			// 	{
-	// 			// 		id: currentQuestion.id,
-	// 			// 		question: currentQuestion.question,
-	// 			// 		userAnswer: userAnswer.trim(),
-	// 			// 		correctAnswer: currentQuestion.answer,
-	// 			// 	},
-	// 			// ])
-	// 			setWrongAnswers(prev => {
-	// 				// Controleer of de vraag al in de array zit
-	// 				console.log(wrongAnswers)
-	// 				const isAlreadyInWrongAnswers = prev.some(
-	// 					// wrongAnswer => wrongAnswer.id === currentQuestion.id,
-	// 					wrongAnswer => wrongAnswer.question === currentQuestion.question,
+	// 			// Verwijder correct beantwoorde vraag uit de lijst van foute antwoorden
+	// 			setWrongAnswers(prevWrongAnswers => {
+	// 				const updatedWrongAnswers = prevWrongAnswers.filter(
+	// 					w => w.id !== currentQuestion.id,
 	// 				)
 
-	// 				// Voeg de vraag alleen toe als deze nog niet in de array zit
+	// 				// Controleer direct op de nieuwe waarde van wrongAnswers
+	// 				if (updatedWrongAnswers.length === 0) {
+	// 					// Geen foute antwoorden meer, quiz is voltooid
+	// 					setTimeout(() => {
+	// 						setFeedback(prevFeedback =>
+	// 							prevFeedback
+	// 								? prevFeedback + '\nQuiz voltooid!'
+	// 								: 'Quiz voltooid!',
+	// 						)
+	// 						setHasMoreQuestions(false)
+	// 					}, 3000) // Vertraging van 3 seconden
+	// 				}
+
+	// 				return updatedWrongAnswers
+	// 			})
+	// 		} else {
+	// 			// Voeg fout antwoord toe aan de lijst van foute antwoorden
+	// 			setWrongAnswers(prev => {
+	// 				const isAlreadyInWrongAnswers = prev.some(
+	// 					wrongAnswer => wrongAnswer.id === currentQuestion.id,
+	// 				)
+
 	// 				if (!isAlreadyInWrongAnswers) {
 	// 					return [
 	// 						...prev,
@@ -245,58 +157,181 @@ export default function QuizPlayRoute() {
 	// 						},
 	// 					]
 	// 				}
-	// 				console.log(wrongAnswers)
 
-	// 				// Als de vraag al in de array zit, geef de bestaande array terug
 	// 				return prev
 	// 			})
 
-	// 			let feedbackMessage =
-	// 				'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
-	// 			feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
-
+	// 			const feedbackMessage = `Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
 	// 			setFeedback(feedbackMessage)
 	// 		}
 
 	// 		// Ga naar de volgende vraag of herstart met foute antwoorden
-	// 		console.log(`currentQuestionIndex is: ${currentQuestionIndex}`)
-	// 		console.log(`questionsToDisplay.length is: ${questionsToDisplay.length}`)
 	// 		if (currentQuestionIndex < questionsToDisplay.length - 1) {
 	// 			setCurrentQuestionIndex(prevIndex => prevIndex + 1)
 	// 			setUserAnswer('')
 	// 		} else {
-	// 			// Als er foute antwoorden zijn, herstart met alleen de foute antwoorden
-	// 			console.log(wrongAnswers.length)
-	// 			if (wrongAnswers.length > 0) {
-	// 				setRetrying(true)
-	// 				setQuestionsToDisplay(
-	// 					wrongAnswers.map((a, index) => ({
-	// 						// id: `wrong-${index}`,
+	// 			setWrongAnswers(prevWrongAnswers => {
+	// 				if (prevWrongAnswers.length > 0) {
+	// 					setRetrying(true)
+	// 					const newQuestionsToDisplay = prevWrongAnswers.map(a => ({
 	// 						id: a.id,
 	// 						question: a.question,
 	// 						answer: a.correctAnswer,
-	// 					})),
-	// 				)
-	// 				setCurrentQuestionIndex(0)
-	// 				setUserAnswer('')
-	// 				setFeedback(null)
-	// 				setHasMoreQuestions(true)
-	// 				console.log('question to display:')
-	// 				console.log(questionsToDisplay)
-	// 			} else {
-	// 				// Gebruik een korte vertraging om feedback weer te geven
-	// 				setTimeout(() => {
-	// 					setFeedback(prevFeedback =>
-	// 						prevFeedback
-	// 							? prevFeedback + '\nQuiz voltooid!'
-	// 							: 'Quiz voltooid!',
-	// 					)
-	// 					setHasMoreQuestions(false)
-	// 				}, 3000) // Vertraging van 3 seconden
-	// 			}
+	// 					}))
+	// 					setQuestionsToDisplay(newQuestionsToDisplay)
+	// 					setCurrentQuestionIndex(0)
+	// 					setUserAnswer('')
+	// 					setFeedback(null)
+	// 					setHasMoreQuestions(true)
+	// 				}
+	// 				return prevWrongAnswers
+	// 			})
 	// 		}
 	// 	}
 	// }
+
+	useEffect(() => {
+		if (wrongAnswers.length === 0 && retrying) {
+			// Als er geen foute antwoorden meer zijn, is de quiz voltooid
+			setTimeout(() => {
+				setFeedback(prevFeedback =>
+					prevFeedback ? prevFeedback + '\nQuiz voltooid!' : 'Quiz voltooid!',
+				)
+				setHasMoreQuestions(false)
+			}, 2000) // Vertraging van 2 seconden
+		}
+	}, [wrongAnswers, retrying]) // Run this effect when wrongAnswers or retrying changes
+
+	const handleAnswerSubmit = async (event: React.FormEvent) => {
+		event.preventDefault()
+		// console.log('question to display:')
+		// console.log(questionsToDisplay)
+		// console.log('currentQuestion:')
+		// console.log(currentQuestion)
+
+		if (currentQuestion) {
+			if (
+				userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
+			) {
+				// goed antwoord
+				setFeedback('Correct!')
+				console.log(`retrying: ${retrying}`)
+				if (retrying) {
+					// Verwijder de vraag uit wrongAnswers als het correct is beantwoord
+					// setWrongAnswers(prevWrongAnswers =>
+					// 	prevWrongAnswers.filter(w => w.id !== currentQuestion.id),
+					// )
+
+					// Gebruik een tijdelijke variabele om de bijgewerkte array te bewaren
+					const updatedWrongAnswers = wrongAnswers.filter(
+						w => w.id !== currentQuestion.id,
+					)
+					setWrongAnswers(updatedWrongAnswers)
+
+					// Controleer direct met de bijgewerkte wrongAnswers
+					if (updatedWrongAnswers.length === 0) {
+						setTimeout(() => {
+							setFeedback(prevFeedback =>
+								prevFeedback
+									? prevFeedback + '\nQuiz voltooid!'
+									: 'Quiz voltooid!',
+							)
+							setHasMoreQuestions(false)
+						}, 3000) // Vertraging van 3 seconden
+					}
+				}
+			} //fout antwoord
+			else {
+				// Voeg fout antwoord toe aan de lijst van foute antwoorden
+				// setWrongAnswers(prev => [
+				// 	...prev,
+				// 	{
+				// 		id: currentQuestion.id,
+				// 		question: currentQuestion.question,
+				// 		userAnswer: userAnswer.trim(),
+				// 		correctAnswer: currentQuestion.answer,
+				// 	},
+				// ])
+				setWrongAnswers(prev => {
+					// Controleer of de vraag al in de array zit
+					console.log(wrongAnswers)
+					const isAlreadyInWrongAnswers = prev.some(
+						// wrongAnswer => wrongAnswer.id === currentQuestion.id,
+						wrongAnswer => wrongAnswer.question === currentQuestion.question,
+					)
+
+					// Voeg de vraag alleen toe als deze nog niet in de array zit
+					if (!isAlreadyInWrongAnswers) {
+						return [
+							...prev,
+							{
+								id: currentQuestion.id,
+								question: currentQuestion.question,
+								userAnswer: userAnswer.trim(),
+								correctAnswer: currentQuestion.answer,
+							},
+						]
+					}
+					console.log(wrongAnswers)
+
+					// Als de vraag al in de array zit, geef de bestaande array terug
+					return prev
+				})
+
+				let feedbackMessage =
+					'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
+				feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
+
+				setFeedback(feedbackMessage)
+			}
+
+			// Ga naar de volgende vraag of herstart met foute antwoorden
+			console.log(`currentQuestionIndex is: ${currentQuestionIndex}`)
+			console.log(`questionsToDisplay.length is: ${questionsToDisplay.length}`)
+			if (currentQuestionIndex < questionsToDisplay.length - 1) {
+				setCurrentQuestionIndex(prevIndex => prevIndex + 1)
+				setUserAnswer('')
+			} //bij einde van de vragen gekomen, kijken of er nog foute antwoorden zijn
+			else {
+				// Als er foute antwoorden zijn, herstart met alleen de foute antwoorden
+				// console.log(wrongAnswers.length)
+
+				// const updatedWrongAnswers = wrongAnswers.filter(
+				// 	w => w.id !== currentQuestion.id,
+				// )
+				const oneOrMoreWrongAnswersLeft = wrongAnswers.length > 0
+				// if (updatedWrongAnswers.length > 0) {
+				// if (wrongAnswers.length > 0) {
+				if (oneOrMoreWrongAnswersLeft) {
+					setRetrying(true)
+					setQuestionsToDisplay(
+						wrongAnswers.map((a, index) => ({
+							// id: `wrong-${index}`,
+							id: a.id,
+							question: a.question,
+							answer: a.correctAnswer,
+						})),
+					)
+					setCurrentQuestionIndex(0)
+					setUserAnswer('')
+					setFeedback(null)
+					setHasMoreQuestions(true)
+					console.log('question to display:')
+					console.log(questionsToDisplay)
+				} else {
+					// Gebruik een korte vertraging om feedback weer te geven
+					setTimeout(() => {
+						setFeedback(prevFeedback =>
+							prevFeedback
+								? prevFeedback + '\nQuiz voltooid!'
+								: 'Quiz voltooid!',
+						)
+						setHasMoreQuestions(false)
+					}, 3000) // Vertraging van 3 seconden
+				}
+			}
+		}
+	}
 
 	return (
 		<div className="container mx-auto px-4">

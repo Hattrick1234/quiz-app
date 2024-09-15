@@ -200,12 +200,15 @@ export default function QuizStartRoute() {
 				</div>
 			</Form>
 			{/* Terugknop toegevoegd */}
-			<div className="my-4">
+			<div className="my-4 flex space-x-4">
 				<Link
 					to={`/quizzes/${quiz.id}`}
 					className="text-blue-500 hover:underline"
 				>
 					Terug naar bewerkmodus
+				</Link>
+				<Link to="/quizzes" className="text-blue-500 hover:underline">
+					Terug naar quizzes
 				</Link>
 			</div>
 		</div>

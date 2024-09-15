@@ -91,7 +91,10 @@ export async function action({ request }: ActionFunctionArgs) {
 		let questions: CSVQuestion[]
 		try {
 			// Gebruik PapaParse om CSV-string naar JSON te converteren en typ de output correct
-			const parsedResult = Papa.parse<CSVQuestion>(content, { header: true })
+			const parsedResult = Papa.parse<CSVQuestion>(content, {
+				header: true,
+				delimiter: ';', //scheidingsteken in de csv
+			})
 			questions = parsedResult.data // Pak de data uit de parse-resultaten
 
 			// Filter out empty rows
@@ -278,6 +281,13 @@ export default function UsersRoute() {
 									>
 										Download CSV
 									</a>
+									{/* Start quiz button with saved settings */}
+									<Link
+										to={`/quizzes/${quiz.id}/play`}
+										className="ml-4 rounded bg-green-500 px-2 py-1 text-white"
+									>
+										Start Quiz
+									</Link>
 								</div>
 							</>
 						)}
@@ -357,6 +367,10 @@ export default function UsersRoute() {
 					Upload CSV and Create Quiz
 				</button>
 			</fetcher.Form>
+			{/* Instructie voor het CSV-bestand */}
+			<p className="mt-2 text-sm text-gray-600">
+				Scheidingsteken in csv bestand moet een ; zijn.
+			</p>
 		</div>
 	)
 }

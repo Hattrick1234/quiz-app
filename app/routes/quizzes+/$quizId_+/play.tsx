@@ -117,7 +117,7 @@ export default function QuizPlayRoute() {
 						prevFeedback ? prevFeedback + '\nQuiz voltooid!' : 'Quiz voltooid!',
 					)
 					setHasMoreQuestions(false)
-				}, 3500) // Vertraging van 3,5 seconden
+				}, 2000) // Vertraging van 2 seconden
 			}
 		}
 	}
@@ -159,10 +159,15 @@ export default function QuizPlayRoute() {
 							</button>
 							<button
 								onClick={() => navigate(`/quizzes/${quiz.id}/start`)}
-								//className="rounded bg-blue-500 px-4 py-2 text-white"
 								className="ml-2 rounded bg-gray-500 px-4 py-2 text-white"
 							>
 								Terug naar instellingen
+							</button>
+							<button
+								onClick={() => navigate(`/quizzes`)}
+								className="ml-2 rounded bg-purple-400 px-4 py-2 text-white"
+							>
+								Terug naar quizzes
 							</button>
 							{/* </div> */}
 						</Form>

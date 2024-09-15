@@ -20,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	}
 
 	const fields = ['question', 'answer']
-	const opts = { fields }
+	const opts = { fields, delimiter: ';' }
 
 	try {
 		const json2csvParser = new Json2CsvParser(opts)
