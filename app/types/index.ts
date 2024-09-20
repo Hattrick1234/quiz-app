@@ -18,7 +18,6 @@ export type CSVQuestion = {
 	answer: string
 }
 
-//export type QuestionOrder = 'random' | 'top-to-bottom' | 'bottom-to-top'
 export enum QuestionOrder {
 	Random = 'random',
 	TopToBottom = 'top-to-bottom',
@@ -29,4 +28,10 @@ export enum QuestionReadOption {
 	None = 'none',
 	ReadWithQuestion = 'read-with-question',
 	ReadWithoutQuestion = 'read-without-question',
+}
+
+export enum AskingOrder {
+	QuestionToAnswer = 'question-to-answer',
+	AnswerToQuestion = 'answer-to-question',
+	Mix = 'mix',
 }

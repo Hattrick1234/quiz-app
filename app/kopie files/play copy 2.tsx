@@ -305,7 +305,7 @@ export default function QuizPlayRoute() {
 				if (oneOrMoreWrongAnswersLeft) {
 					setRetrying(true)
 					setQuestionsToDisplay(
-						wrongAnswers.map((a, index) => ({
+						wrongAnswers.map(a => ({
 							// id: `wrong-${index}`,
 							id: a.id,
 							question: a.question,

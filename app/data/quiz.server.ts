@@ -3,6 +3,7 @@ import {
 	type QuestionOrder,
 	type QuestionSummary,
 	type QuestionReadOption,
+	type AskingOrder,
 } from '#app/types/index.ts'
 import { prisma } from '#app/utils/db.server.ts'
 
@@ -153,6 +154,7 @@ export async function saveQuizSettings(
 	quizId: string,
 	order: QuestionOrder,
 	readOption: QuestionReadOption,
+	askingOrder: AskingOrder,
 ) {
 	return await prisma.quizSetting.upsert({
 		where: {
@@ -164,12 +166,14 @@ export async function saveQuizSettings(
 		update: {
 			order,
 			readOption,
+			askingOrder,
 		},
 		create: {
 			userId,
 			quizId,
 			order,
 			readOption,
+			askingOrder,
 		},
 	})
 }

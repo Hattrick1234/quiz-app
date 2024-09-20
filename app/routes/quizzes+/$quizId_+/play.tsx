@@ -6,7 +6,11 @@ import {
 	getQuizById,
 	getQuizSettings,
 } from '#app/data/quiz.server.js'
-import { QuestionOrder, QuestionReadOption } from '#app/types/index.ts'
+import {
+	AskingOrder,
+	QuestionOrder,
+	QuestionReadOption,
+} from '#app/types/index.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -32,6 +36,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const order = (settings?.order || QuestionOrder.Random) as QuestionOrder
 	const readOption = (settings?.readOption ||
 		QuestionReadOption.None) as QuestionReadOption
+	const askingOrder = (settings?.askingOrder ||
+		AskingOrder.QuestionToAnswer) as AskingOrder
 
 	// Sorteer de vragen op basis van de gekozen volgorde
 	let sortedQuestions = [...questions]
@@ -41,7 +47,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		sortedQuestions = sortedQuestions.reverse()
 	}
 
-	return json({ quiz, sortedQuestions, readOption })
+	// Pas de vragen aan op basis van askingOrder
+	if (askingOrder === AskingOrder.AnswerToQuestion) {
+		// Wissel question en answer om voor elke vraag
+		sortedQuestions = sortedQuestions.map(questionLine => ({
+			...questionLine,
+			question: questionLine.answer,
+			answer: questionLine.question,
+		}))
+	} else if (askingOrder === AskingOrder.Mix) {
+		// Per vraag bepalen of question en answer worden omgedraaid
+		sortedQuestions = sortedQuestions.map(questionLine => {
+			const shouldSwap = Math.random() >= 0.5 // 50% kans om om te draaien
+			if (shouldSwap) {
+				return {
+					...questionLine,
+					question: questionLine.answer,
+					answer: questionLine.question,
+				}
+			}
+			return questionLine
+		})
+	}
+
+	return json({ quiz, sortedQuestions, readOption, askingOrder })
 }
 
 export default function QuizPlayRoute() {
@@ -169,7 +198,6 @@ export default function QuizPlayRoute() {
 							>
 								Terug naar quizzes
 							</button>
-							{/* </div> */}
 						</Form>
 
 						{feedback && (

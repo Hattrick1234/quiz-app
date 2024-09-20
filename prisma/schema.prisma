@@ -44,6 +44,7 @@ model Quiz {
 
   questionLanguage String @default("nl")
   answerLanguage   String @default("nl")
+  
 }
 
 model Question {
@@ -65,13 +66,10 @@ model QuizSetting {
   user   User   @relation(fields: [userId], references: [id])
   quiz   Quiz   @relation(fields: [quizId], references: [id])
 
-  order  String @default("random")
-  readOption String @default("none")
-
-  // Optioneel: andere spelinstellingen
-  // andereInstelling Int? 
-  // nogEenInstelling Boolean? 
-
+  order       String @default("random")
+  readOption  String @default("none")
+  askingOrder String @default("question-to-answer")
+  
   @@unique([userId, quizId])
 }
 

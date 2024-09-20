@@ -6,7 +6,11 @@ import {
 	getQuizSettings,
 	saveQuizSettings,
 } from '#app/data/quiz.server.js'
-import { QuestionOrder, QuestionReadOption } from '#app/types/index.ts' // Import the new type
+import {
+	AskingOrder,
+	QuestionOrder,
+	QuestionReadOption,
+} from '#app/types/index.ts' // Import the new type
 import { requireUserId } from '#app/utils/auth.server.js'
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,9 +33,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const order = (settings?.order ?? QuestionOrder.Random) as QuestionOrder
 	const readOption = (settings?.readOption ??
 		QuestionReadOption.None) as QuestionReadOption
+	const askingOrder = (settings?.askingOrder ??
+		AskingOrder.QuestionToAnswer) as AskingOrder
 
 	console.log(readOption)
-	return { quiz, userId, order, readOption }
+	return { quiz, userId, order, readOption, askingOrder }
 }
 
 // Voeg de action toe voor het opslaan van instellingen
@@ -42,22 +48,26 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 	const formData = await request.formData()
 	const order = formData.get('order') as QuestionOrder // Verkrijg de volgorde van de form
 	const readOption = formData.get('readOption') as QuestionReadOption // Verkrijg de voorleesoptie van de form
+	const askingOrder = formData.get('askingOrder') as AskingOrder // Verkrijg de NL->EN, EN->NL of mix optie van de form
 
 	if (!quizId) {
 		throw new Response('Quiz ID is required', { status: 400 })
 	}
 
 	// Sla de quizinstellingen op
-	await saveQuizSettings(userId, quizId, order, readOption)
+	await saveQuizSettings(userId, quizId, order, readOption, askingOrder)
 
 	return redirect(`/quizzes/${quizId}/play`) // Verwijs naar de play-pagina
 }
 
 export default function QuizStartRoute() {
-	const { quiz, order, readOption } = useLoaderData<typeof loader>()
+	const { quiz, order, readOption, askingOrder } =
+		useLoaderData<typeof loader>()
 	const [selectedOrder, setSelectedOrder] = useState<QuestionOrder>(order) // Gebruik de opgehaalde volgorde
 	const [selectedReadOption, setSelectedReadOption] =
 		useState<QuestionReadOption>(readOption)
+	const [selectedQuestionAnswerOrder, setSelectedQuestionAnswerOrder] =
+		useState<AskingOrder>(askingOrder)
 
 	return (
 		<div className="container mx-auto px-4">
@@ -122,7 +132,77 @@ export default function QuizStartRoute() {
 					</div>
 				</div>
 
-				{/* Nieuwe sectie voor voorleesopties */}
+				{/* Sectie voor vraag naar antwoord, andersom of mix */}
+				<div className="my-4">
+					<label className="block text-sm font-medium text-gray-700">
+						Wil je van vraag naar antwoord, andersom of een mix?
+					</label>
+					<div className="mt-2">
+						<div className="flex items-center">
+							<input
+								id={AskingOrder.QuestionToAnswer}
+								name="askingOrder"
+								type="radio"
+								value={AskingOrder.QuestionToAnswer}
+								checked={
+									selectedQuestionAnswerOrder === AskingOrder.QuestionToAnswer
+								}
+								onChange={() =>
+									setSelectedQuestionAnswerOrder(AskingOrder.QuestionToAnswer)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor={AskingOrder.QuestionToAnswer}
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Vraag naar antwoord. ---Bijv. Nederlands naar Engels.---
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id={AskingOrder.AnswerToQuestion}
+								name="askingOrder"
+								type="radio"
+								value={AskingOrder.AnswerToQuestion}
+								checked={
+									selectedQuestionAnswerOrder === AskingOrder.AnswerToQuestion
+								}
+								onChange={() =>
+									setSelectedQuestionAnswerOrder(AskingOrder.AnswerToQuestion)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor={AskingOrder.AnswerToQuestion}
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Antwoord naar vraag. ---Bijv. omgekeerd dus Engels naar
+								Nederlands.---
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id={AskingOrder.Mix}
+								name="askingOrder"
+								type="radio"
+								value={AskingOrder.Mix}
+								checked={selectedQuestionAnswerOrder === AskingOrder.Mix}
+								onChange={() => setSelectedQuestionAnswerOrder(AskingOrder.Mix)}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor={AskingOrder.Mix}
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Mix. --- Bijv. enkele vragen in Engels en enkele in
+								Nederlands.---
+							</label>
+						</div>
+					</div>
+				</div>
+
+				{/* Sectie voor voorleesopties */}
 				<div className="my-4">
 					<label className="block text-sm font-medium text-gray-700">
 						Voorleesopties

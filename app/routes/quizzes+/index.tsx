@@ -235,6 +235,7 @@ export default function UsersRoute() {
 									<option value="en">Engels</option>
 									<option value="fr">Frans</option>
 								</select>
+
 								<button
 									type="submit"
 									name="intent"
@@ -279,14 +280,14 @@ export default function UsersRoute() {
 										href={`/api/download-quiz?quizId=${quiz.id}`}
 										className="ml-4 rounded bg-blue-500 px-2 py-1 text-white"
 									>
-										Download CSV
+										Download
 									</a>
 									{/* Start quiz button with saved settings */}
 									<Link
 										to={`/quizzes/${quiz.id}/play`}
 										className="ml-4 rounded bg-green-500 px-2 py-1 text-white"
 									>
-										Start Quiz
+										Start
 									</Link>
 								</div>
 							</>
