@@ -10,6 +10,7 @@ import {
 	AskingOrder,
 	QuestionOrder,
 	QuestionReadOption,
+	type QuizQuestion,
 } from '#app/types/index.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
 
@@ -40,35 +41,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		AskingOrder.QuestionToAnswer) as AskingOrder
 
 	// Sorteer de vragen op basis van de gekozen volgorde
-	let sortedQuestions = [...questions]
+	let sortedQuestions: QuizQuestion[] = [...questions].map(questionLine => ({
+		...questionLine,
+		questionLanguage: quiz.questionLanguage, // Voeg standaard de vraag en antwoordtaal toe
+		answerLanguage: quiz.answerLanguage,
+	}))
 	if (order === QuestionOrder.Random) {
 		sortedQuestions = sortedQuestions.sort(() => Math.random() - 0.5)
 	} else if (order === QuestionOrder.BottomToTop) {
 		sortedQuestions = sortedQuestions.reverse()
 	}
 
-	// Pas de vragen aan op basis van askingOrder
-	if (askingOrder === AskingOrder.AnswerToQuestion) {
-		// Wissel question en answer om voor elke vraag
-		sortedQuestions = sortedQuestions.map(questionLine => ({
-			...questionLine,
-			question: questionLine.answer,
-			answer: questionLine.question,
-		}))
-	} else if (askingOrder === AskingOrder.Mix) {
-		// Per vraag bepalen of question en answer worden omgedraaid
-		sortedQuestions = sortedQuestions.map(questionLine => {
-			const shouldSwap = Math.random() >= 0.5 // 50% kans om om te draaien
+	// Voeg taal toe op basis van askingOrder
+	sortedQuestions = sortedQuestions.map(questionLine => {
+		// let questionLanguage = quiz.questionLanguage
+		// let answerLanguage = quiz.answerLanguage
+
+		if (askingOrder === AskingOrder.AnswerToQuestion) {
+			return {
+				...questionLine,
+				question: questionLine.answer,
+				answer: questionLine.question,
+				questionLanguage: quiz.answerLanguage, // Inverteer de talen
+				answerLanguage: quiz.questionLanguage,
+			}
+		} else if (askingOrder === AskingOrder.Mix) {
+			const shouldSwap = Math.random() >= 0.5
 			if (shouldSwap) {
 				return {
 					...questionLine,
 					question: questionLine.answer,
 					answer: questionLine.question,
+					questionLanguage: quiz.answerLanguage, // Verwissel talen als de vragen worden omgedraaid
+					answerLanguage: quiz.questionLanguage,
 				}
 			}
-			return questionLine
-		})
-	}
+		}
+
+		return {
+			...questionLine,
+			questionLanguage: quiz.questionLanguage,
+			answerLanguage: quiz.answerLanguage,
+		}
+	})
 
 	return json({ quiz, sortedQuestions, readOption, askingOrder })
 }
@@ -87,11 +102,14 @@ export default function QuizPlayRoute() {
 			? sortedQuestions[currentQuestionIndex]
 			: null
 
+	console.log(currentQuestion)
+
 	// Functie om vraag voor te lezen (kan niet aangeroepen worden in de useEffect, dan komt er een ES-lint foutmelding)
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
-			utterance.lang = quiz.questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
+			//utterance.lang = quiz.questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
+			utterance.lang = currentQuestion.questionLanguage // .questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
 			window.speechSynthesis.speak(utterance)
 		} else {
 			alert('Uw browser ondersteunt geen spraakweergave.')
@@ -109,7 +127,7 @@ export default function QuizPlayRoute() {
 			) {
 				// Maak en spreek de uitspraak
 				const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
-				utterance.lang = quiz.questionLanguage // 'fr-FR' // Stel de taal in
+				utterance.lang = currentQuestion.questionLanguage
 				window.speechSynthesis.speak(utterance)
 			}
 		} else if (!('speechSynthesis' in window)) {
@@ -146,7 +164,7 @@ export default function QuizPlayRoute() {
 						prevFeedback ? prevFeedback + '\nQuiz voltooid!' : 'Quiz voltooid!',
 					)
 					setHasMoreQuestions(false)
-				}, 2000) // Vertraging van 2 seconden
+				}, 1500) // Vertraging in milliseconden voor afsluiten van quiz
 			}
 		}
 	}
@@ -158,7 +176,6 @@ export default function QuizPlayRoute() {
 			{hasMoreQuestions ? (
 				currentQuestion ? (
 					<div>
-						{/* <h2 className="my-4 text-xl">{currentQuestion.question}</h2> */}
 						{/* Toon vraag afhankelijk van de voorleesoptie */}
 						{readOption !== QuestionReadOption.ReadWithoutQuestion && (
 							<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
@@ -179,7 +196,6 @@ export default function QuizPlayRoute() {
 								className="mb-4 w-full rounded border px-2 py-1"
 								placeholder="Typ uw antwoord hier..."
 							/>
-							{/* <div className="container mx-auto px-4"> */}
 							<button
 								type="submit"
 								className="rounded bg-blue-500 px-4 py-2 text-white"

@@ -13,6 +13,14 @@ export type QuestionSummary = {
 	answer: string
 }
 
+export type QuizQuestion = {
+	id: string
+	question: string
+	answer: string
+	questionLanguage: string // Voor de taal van de vraag
+	answerLanguage: string // Voor de taal van het antwoord
+}
+
 export type CSVQuestion = {
 	question: string
 	answer: string
