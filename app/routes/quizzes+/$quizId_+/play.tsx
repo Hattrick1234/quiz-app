@@ -96,6 +96,9 @@ export default function QuizPlayRoute() {
 	const [feedback, setFeedback] = useState<string | null>(null)
 	const [revealedLetters, setRevealedLetters] = useState(0)
 	const [hasMoreQuestions, setHasMoreQuestions] = useState(true)
+	// Nieuwe staten voor score
+	const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0)
+	const [numberOfAnsweredQuestions, setNumberOfAnsweredQuestions] = useState(0)
 	const navigate = useNavigate()
 
 	// Ref voor het inputveld
@@ -107,7 +110,13 @@ export default function QuizPlayRoute() {
 			? sortedQuestions[currentQuestionIndex]
 			: null
 
-	console.log(currentQuestion)
+	// console.log(currentQuestion)
+
+	// Bereken percentage correcte antwoorden
+	const scorePercentage =
+		numberOfAnsweredQuestions > 0
+			? Math.round((numberOfCorrectAnswers / numberOfAnsweredQuestions) * 100)
+			: 0
 
 	// Functie om vraag voor te lezen (kan niet aangeroepen worden in de useEffect, dan komt er een ES-lint foutmelding)
 	const handleReadQuestion = () => {
@@ -155,10 +164,12 @@ export default function QuizPlayRoute() {
 		}
 
 		if (currentQuestion) {
+			setNumberOfAnsweredQuestions(prev => prev + 1) // Verhoog het aantal beantwoorde vragen
 			if (
 				userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
 			) {
 				setFeedback('Correct!')
+				setNumberOfCorrectAnswers(prev => prev + 1) // Verhoog het aantal correcte antwoorden
 			} else {
 				// Set de vraag als onderdeel van de feedback
 				let feedbackMessage = 'Helaas:\n'
@@ -202,6 +213,13 @@ export default function QuizPlayRoute() {
 	return (
 		<div className="container mx-auto px-4">
 			<h1 className="my-4 text-2xl font-bold">Quiz: {quiz.title}</h1>
+			{/* Score weergave */}
+			<div className="my-4">
+				<p>
+					Score: {scorePercentage}% ({numberOfCorrectAnswers}/
+					{numberOfAnsweredQuestions})
+				</p>
+			</div>
 
 			{hasMoreQuestions ? (
 				currentQuestion ? (
