@@ -1,6 +1,7 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData, Form, useNavigate } from '@remix-run/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import DiacriticsInput from '#app/components/diacriticsInput.js'
 import {
 	getQuestionsByQuizId,
 	getQuizById,
@@ -93,8 +94,12 @@ export default function QuizPlayRoute() {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 	const [userAnswer, setUserAnswer] = useState('')
 	const [feedback, setFeedback] = useState<string | null>(null)
+	const [revealedLetters, setRevealedLetters] = useState(0)
 	const [hasMoreQuestions, setHasMoreQuestions] = useState(true)
 	const navigate = useNavigate()
+
+	// Ref voor het inputveld
+	const inputRef = useRef<HTMLInputElement>(null)
 
 	// Controleer of currentQuestionIndex binnen het bereik van sortedQuestions ligt
 	const currentQuestion =
@@ -138,17 +143,29 @@ export default function QuizPlayRoute() {
 	const handleAnswerSubmit = async (event: React.FormEvent) => {
 		event.preventDefault()
 
+		//Zet het aantal onthulde letters weer op 0 voor de nieuwe vraag
+		setRevealedLetters(0)
+		// Focus terug naar het invoerveld, voor het geval je de knop had ingedrukt om antwoord te verzenden
+		inputRef.current?.focus()
+
+		// Controleer of het antwoord leeg is
+		if (userAnswer.trim() === '') {
+			setFeedback('Vul een antwoord in voordat je verder gaat.')
+			return
+		}
+
 		if (currentQuestion) {
 			if (
 				userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
 			) {
 				setFeedback('Correct!')
 			} else {
-				// setFeedback(`Fout! Het juiste antwoord is: ${currentQuestion.answer}`)
+				// Set de vraag als onderdeel van de feedback
+				let feedbackMessage = 'Helaas:\n'
 
-				let feedbackMessage =
-					'Helaas, zie hieronder het door jou ingevulde woord en daaronder wat het had moeten zijn:\n'
-				feedbackMessage += `${userAnswer.trim()}\n${currentQuestion.answer}\n\n`
+				// Voeg de vraag toe
+				feedbackMessage += `De vraag was: ${currentQuestion.question}\n`
+				feedbackMessage += `${userAnswer.trim()} (jouw antwoord)\n${currentQuestion.answer} (goede antwoord)\n\n`
 
 				setFeedback(feedbackMessage)
 			}
@@ -169,6 +186,19 @@ export default function QuizPlayRoute() {
 		}
 	}
 
+	const handleInsertDiacritic = (char: string) => {
+		setUserAnswer(prevAnswer => prevAnswer + char)
+		inputRef.current?.focus() // Breng focus terug naar het inputveld
+	}
+
+	const handleRevealLetter = () => {
+		if (currentQuestion) {
+			setRevealedLetters(prev =>
+				Math.min(prev + 1, currentQuestion.answer.length),
+			)
+		}
+	}
+
 	return (
 		<div className="container mx-auto px-4">
 			<h1 className="my-4 text-2xl font-bold">Quiz: {quiz.title}</h1>
@@ -180,21 +210,38 @@ export default function QuizPlayRoute() {
 						{readOption !== QuestionReadOption.ReadWithoutQuestion && (
 							<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
 						)}
-						<button
-							onClick={handleReadQuestion}
-							className="mb-4 flex items-center rounded bg-green-500 px-4 py-2 text-white"
-						>
-							{/* Unicode karakter voor luidspreker icoon */}
-							<span className="mr-2">🔊</span> Lees de vraag voor
-						</button>
+						<div className="mb-4 flex">
+							<button
+								onClick={handleReadQuestion}
+								className="mb-4 flex items-center rounded bg-green-500 px-4 py-2 text-white"
+							>
+								{/* Unicode karakter voor luidspreker icoon */}
+								<span className="mr-2">🔊</span> Lees de vraag voor
+							</button>
+							<button
+								type="button"
+								onClick={handleRevealLetter}
+								//className="ml-2 rounded bg-yellow-500 px-4 py-2 text-white"
+								className="mb-4 ml-2 flex items-center rounded bg-yellow-500 px-4 py-2 text-white"
+							>
+								Toon een letter (indien niks is ingevuld)
+							</button>
+						</div>
 
 						<Form onSubmit={handleAnswerSubmit}>
+							<DiacriticsInput onInsert={handleInsertDiacritic} />
+
 							<input
+								ref={inputRef}
 								type="text"
 								value={userAnswer}
 								onChange={e => setUserAnswer(e.target.value)}
 								className="mb-4 w-full rounded border px-2 py-1"
-								placeholder="Typ uw antwoord hier..."
+								placeholder={
+									currentQuestion
+										? currentQuestion.answer.slice(0, revealedLetters)
+										: 'Typ uw antwoord hier...'
+								} // Toon de onthulde letters, elke keer als je op de toon letter knop drukt een extra letter
 							/>
 							<button
 								type="submit"
