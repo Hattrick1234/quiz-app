@@ -49,8 +49,10 @@ model Quiz {
 
 model Question {
   id       String @id @default(cuid())
+  orderIndex Int @default(0)
   question String
   answer   String
+  difficult Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

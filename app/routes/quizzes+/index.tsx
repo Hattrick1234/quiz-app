@@ -110,7 +110,8 @@ export async function action({ request }: ActionFunctionArgs) {
 			}
 
 			//Converteer de questions en kijk of geldig question en answer formaten betreft
-			questions = questions.map(q => ({
+			questions = questions.map((q, index) => ({
+				orderIndex: index,
 				question: q.question,
 				answer: q.answer,
 			}))

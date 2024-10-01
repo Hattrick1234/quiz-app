@@ -15,8 +15,10 @@ export async function updateQuestions(
 		prisma.question.update({
 			where: { id: question.id },
 			data: {
+				orderIndex: question.orderIndex,
 				question: question.question,
 				answer: question.answer,
+				difficult: question.difficult,
 			},
 		}),
 	)
@@ -43,12 +45,36 @@ export async function addQuestion(quizId: string, question: QuestionSummary) {
 	const newQuestion = await prisma.question.create({
 		data: {
 			quizId,
+			orderIndex: question.orderIndex,
 			question: question.question,
 			answer: question.answer,
+			difficult: question.difficult,
 		},
 	})
 	return newQuestion
 }
+
+// export async function addQuestion(quizId: string, question: QuestionSummary) {
+// 	// Zoek de hoogste orderIndex voor de opgegeven quizId
+// 	const highestOrderIndex = await prisma.question.findFirst({
+// 		where: { quizId },
+// 		orderBy: { orderIndex: 'desc' }, // Sorteer op hoogste orderIndex
+// 		select: { orderIndex: true }, // Alleen de orderIndex ophalen
+// 	})
+
+// 	// Bepaal de nieuwe orderIndex
+// 	const newOrderIndex = highestOrderIndex ? highestOrderIndex.orderIndex + 1 : 1
+
+// 	const newQuestion = await prisma.question.create({
+// 		data: {
+// 			quizId,
+// 			orderIndex: newOrderIndex,
+// 			question: question.question,
+// 			answer: question.answer,
+// 		},
+// 	})
+// 	return newQuestion
+// }
 
 export async function getQuizById(userId: string, quizId: string) {
 	return await prisma.quiz.findFirst({
@@ -63,11 +89,16 @@ export async function getQuestionsByQuizId(quizId: string) {
 	return await prisma.question.findMany({
 		select: {
 			id: true,
+			orderIndex: true,
 			question: true,
 			answer: true,
+			difficult: true,
 		},
 		where: {
 			quizId: quizId,
+		},
+		orderBy: {
+			orderIndex: 'asc', // Sorteer de vragen op volgorde van de orderIndex
 		},
 	})
 }
@@ -93,7 +124,7 @@ export async function createQuizWithQuestions(
 	userId: string,
 	questionLanguage: string,
 	answerLanguage: string,
-	questions: { question: string; answer: string }[],
+	questions: { orderIndex: number; question: string; answer: string }[],
 ) {
 	return await prisma.quiz.create({
 		data: {
@@ -109,10 +140,27 @@ export async function createQuizWithQuestions(
 }
 
 export async function deleteQuiz(quizId: string) {
-	return await prisma.quiz.delete({
-		where: {
-			id: quizId,
-		},
+	// Gebruik een transactie om ervoor te zorgen dat alles tegelijk wordt uitgevoerd of niets als er een fout optreedt
+	return await prisma.$transaction(async prisma => {
+		// Verwijder eerst alle gerelateerde records uit de Question- en QuizSetting-tabellen
+		await prisma.question.deleteMany({
+			where: {
+				quizId: quizId,
+			},
+		})
+
+		await prisma.quizSetting.deleteMany({
+			where: {
+				quizId: quizId,
+			},
+		})
+
+		// Verwijder dan de quiz zelf
+		return await prisma.quiz.delete({
+			where: {
+				id: quizId,
+			},
+		})
 	})
 }
 

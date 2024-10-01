@@ -9,8 +9,10 @@ export type QuizType = {
 
 export type QuestionSummary = {
 	id: string
+	orderIndex: number
 	question: string
 	answer: string
+	difficult: boolean
 }
 
 export type QuizQuestion = {
@@ -22,6 +24,7 @@ export type QuizQuestion = {
 }
 
 export type CSVQuestion = {
+	orderIndex: number
 	question: string
 	answer: string
 }

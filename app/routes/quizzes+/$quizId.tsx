@@ -58,6 +58,7 @@ export async function action({ request }: LoaderFunctionArgs) {
 		q => q.id,
 	)
 
+	console.log(`voor updatePromise de questions array:`)
 	console.log(questions)
 	// Nieuwe en bestaande vragen scheiden
 	//als de question een id heeft bestaat hij al dan updaten, zo niet dan toevoegen
@@ -78,7 +79,6 @@ export async function action({ request }: LoaderFunctionArgs) {
 		.map(id => deleteQuestions(id))
 
 	try {
-		//await Promise.all(updatePromises)
 		await Promise.all([...updatePromises, ...deletePromises])
 		return json({ success: true })
 	} catch (error) {
@@ -114,12 +114,24 @@ export default function QuizEditRoute() {
 		index: number,
 		field: keyof QuestionSummary,
 	) => {
-		// const newQuestions = [...editableQuestions]
-		// newQuestions[index] = { ...newQuestions[index], [field]: e.target.value }
 		const newQuestions = [...editableQuestions]
 		newQuestions[index] = {
 			...newQuestions[index],
-			[field]: e.target.value,
+			//[field]: e.target.value,
+			[field]: field === 'orderIndex' ? Number(e.target.value) : e.target.value,
+		} as QuestionSummary
+		setEditableQuestions(newQuestions)
+	}
+
+	const handleCheckboxChange = (
+		e: ChangeEvent<HTMLInputElement>,
+		index: number,
+		field: keyof QuestionSummary,
+	) => {
+		const newQuestions = [...editableQuestions]
+		newQuestions[index] = {
+			...newQuestions[index],
+			[field]: e.target.checked,
 		} as QuestionSummary
 		setEditableQuestions(newQuestions)
 	}
@@ -127,8 +139,10 @@ export default function QuizEditRoute() {
 	const handleAddClick = () => {
 		const newQuestion: QuestionSummary = {
 			id: '', // Temporary ID, will be replaced by the actual ID from the database
+			orderIndex: editableQuestions.length, // Voeg toe met de juiste orderIndex
 			question: '',
 			answer: '',
+			difficult: false,
 		}
 		setEditableQuestions([...editableQuestions, newQuestion])
 	}
@@ -142,6 +156,14 @@ export default function QuizEditRoute() {
 		setEditableQuestions([])
 	}
 
+	const handleToggleDifficultForAll = (value: boolean) => {
+		const newQuestions = editableQuestions.map(question => ({
+			...question,
+			difficult: value,
+		}))
+		setEditableQuestions(newQuestions)
+	}
+
 	return (
 		<div className="container mx-auto px-4">
 			<h1 className="my-4 text-2xl font-bold">De vragen en antwoorden:</h1>
@@ -152,6 +174,27 @@ export default function QuizEditRoute() {
 					name="questions"
 					value={JSON.stringify(editableQuestions)}
 				/>
+
+				{/* Knoppen voor het toggelen van alle difficult checkboxes */}
+				{isEditing && (
+					<div className="my-4">
+						<button
+							type="button"
+							onClick={() => handleToggleDifficultForAll(true)}
+							className="rounded bg-blue-500 px-4 py-2 text-white"
+						>
+							Set All Difficult ON
+						</button>
+						<button
+							type="button"
+							onClick={() => handleToggleDifficultForAll(false)}
+							className="ml-2 rounded bg-gray-500 px-4 py-2 text-white"
+						>
+							Set All Difficult OFF
+						</button>
+					</div>
+				)}
+
 				<table
 					id="question-list"
 					className="min-w-full divide-y divide-gray-200"
@@ -159,10 +202,16 @@ export default function QuizEditRoute() {
 					<thead className="bg-gray-50">
 						<tr>
 							<th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+								Order Index
+							</th>
+							<th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
 								Question
 							</th>
 							<th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
 								Answer
+							</th>
+							<th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+								Difficult
 							</th>
 							<th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
 								Actions
@@ -172,6 +221,20 @@ export default function QuizEditRoute() {
 					<tbody className="divide-y divide-gray-200 bg-white">
 						{editableQuestions.map((question, index) => (
 							<tr key={question.id || index} className="question">
+								{/* Order Index */}
+								<td className="whitespace-nowrap px-6 py-4">
+									{isEditing ? (
+										<input
+											type="number"
+											value={question.orderIndex}
+											onChange={e => handleChange(e, index, 'orderIndex')}
+											className="w-full rounded border px-2 py-1"
+										/>
+									) : (
+										question.orderIndex
+									)}
+								</td>
+								{/* Question */}
 								<td className="whitespace-nowrap px-6 py-4">
 									{isEditing ? (
 										<input
@@ -184,6 +247,7 @@ export default function QuizEditRoute() {
 										question.question
 									)}
 								</td>
+								{/* Answer */}
 								<td className="whitespace-nowrap px-6 py-4">
 									{isEditing ? (
 										<input
@@ -196,6 +260,24 @@ export default function QuizEditRoute() {
 										question.answer
 									)}
 								</td>
+								{/* Difficult */}
+								<td className="whitespace-nowrap px-6 py-4">
+									{isEditing ? (
+										<input
+											type="checkbox"
+											checked={question.difficult}
+											onChange={e =>
+												handleCheckboxChange(e, index, 'difficult')
+											}
+											className="rounded border px-2 py-1"
+										/>
+									) : question.difficult ? (
+										'Yes'
+									) : (
+										'No'
+									)}
+								</td>
+								{/* Actions */}
 								<td className="whitespace-nowrap px-6 py-4">
 									{isEditing && (
 										<button
@@ -216,8 +298,6 @@ export default function QuizEditRoute() {
 						<>
 							<button
 								type="submit"
-								// type="button"
-								// onClick={handleSaveClick}
 								className="rounded bg-green-500 px-4 py-2 text-white"
 							>
 								Save
