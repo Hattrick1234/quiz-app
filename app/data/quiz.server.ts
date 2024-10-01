@@ -4,6 +4,7 @@ import {
 	type QuestionSummary,
 	type QuestionReadOption,
 	type AskingOrder,
+	type DifficultSetting,
 } from '#app/types/index.ts'
 import { prisma } from '#app/utils/db.server.ts'
 
@@ -203,6 +204,7 @@ export async function saveQuizSettings(
 	order: QuestionOrder,
 	readOption: QuestionReadOption,
 	askingOrder: AskingOrder,
+	difficultSetting: DifficultSetting,
 ) {
 	return await prisma.quizSetting.upsert({
 		where: {
@@ -215,6 +217,7 @@ export async function saveQuizSettings(
 			order,
 			readOption,
 			askingOrder,
+			difficultSetting,
 		},
 		create: {
 			userId,
@@ -222,6 +225,7 @@ export async function saveQuizSettings(
 			order,
 			readOption,
 			askingOrder,
+			difficultSetting,
 		},
 	})
 }

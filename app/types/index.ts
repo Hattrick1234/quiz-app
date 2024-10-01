@@ -46,3 +46,9 @@ export enum AskingOrder {
 	AnswerToQuestion = 'answer-to-question',
 	Mix = 'mix',
 }
+
+export enum DifficultSetting {
+	Off = 'off',
+	Manual = 'manual',
+	Automatic = 'automatic',
+}

@@ -8,6 +8,7 @@ import {
 } from '#app/data/quiz.server.js'
 import {
 	AskingOrder,
+	DifficultSetting,
 	QuestionOrder,
 	QuestionReadOption,
 } from '#app/types/index.ts' // Import the new type
@@ -35,9 +36,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		QuestionReadOption.None) as QuestionReadOption
 	const askingOrder = (settings?.askingOrder ??
 		AskingOrder.QuestionToAnswer) as AskingOrder
+	const difficultSetting = (settings?.difficultSetting ??
+		DifficultSetting.Off) as DifficultSetting
 
 	console.log(readOption)
-	return { quiz, userId, order, readOption, askingOrder }
+	return { quiz, userId, order, readOption, askingOrder, difficultSetting }
 }
 
 // Voeg de action toe voor het opslaan van instellingen
@@ -49,25 +52,35 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 	const order = formData.get('order') as QuestionOrder // Verkrijg de volgorde van de form
 	const readOption = formData.get('readOption') as QuestionReadOption // Verkrijg de voorleesoptie van de form
 	const askingOrder = formData.get('askingOrder') as AskingOrder // Verkrijg de NL->EN, EN->NL of mix optie van de form
+	const difficultSetting = formData.get('difficultOption') as DifficultSetting // Off, manual, automatic
 
 	if (!quizId) {
 		throw new Response('Quiz ID is required', { status: 400 })
 	}
 
 	// Sla de quizinstellingen op
-	await saveQuizSettings(userId, quizId, order, readOption, askingOrder)
+	await saveQuizSettings(
+		userId,
+		quizId,
+		order,
+		readOption,
+		askingOrder,
+		difficultSetting,
+	)
 
 	return redirect(`/quizzes/${quizId}/play`) // Verwijs naar de play-pagina
 }
 
 export default function QuizStartRoute() {
-	const { quiz, order, readOption, askingOrder } =
+	const { quiz, order, readOption, askingOrder, difficultSetting } =
 		useLoaderData<typeof loader>()
 	const [selectedOrder, setSelectedOrder] = useState<QuestionOrder>(order) // Gebruik de opgehaalde volgorde
 	const [selectedReadOption, setSelectedReadOption] =
 		useState<QuestionReadOption>(readOption)
 	const [selectedQuestionAnswerOrder, setSelectedQuestionAnswerOrder] =
 		useState<AskingOrder>(askingOrder)
+	const [selectedDifficultOption, setSelectedDifficultOption] =
+		useState<DifficultSetting>(difficultSetting)
 
 	return (
 		<div className="container mx-auto px-4">
@@ -265,6 +278,70 @@ export default function QuizStartRoute() {
 								className="ml-3 block text-sm text-gray-700"
 							>
 								Voorlezen zonder vraag tonen (dictee)
+							</label>
+						</div>
+					</div>
+				</div>
+
+				{/* Sectie voor gebruik van moeilijke woorden */}
+				<div className="my-4">
+					<label className="block text-sm font-medium text-gray-700">
+						Opties voor moeilijke woorden
+					</label>
+					<div className="mt-2">
+						<div className="flex items-center">
+							<input
+								id="off"
+								name="difficultOption"
+								type="radio"
+								value="off"
+								checked={selectedDifficultOption === DifficultSetting.Off}
+								onChange={() =>
+									setSelectedDifficultOption(DifficultSetting.Off)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label htmlFor="off" className="ml-3 block text-sm text-gray-700">
+								Niet gebruiken
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id="manual"
+								name="difficultOption"
+								type="radio"
+								value="manual"
+								checked={selectedDifficultOption === DifficultSetting.Manual}
+								onChange={() =>
+									setSelectedDifficultOption(DifficultSetting.Manual)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor="manual"
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Handmatig beheren via vinkjes bij de vragen
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id="automatic"
+								name="difficultOption"
+								type="radio"
+								value="automatic"
+								checked={selectedDifficultOption === DifficultSetting.Automatic}
+								onChange={() =>
+									setSelectedDifficultOption(DifficultSetting.Automatic)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor="automatic"
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Automatisch vinkjes bij de vragen zetten op grond van foute
+								antwoorden van de laatste quiz
 							</label>
 						</div>
 					</div>

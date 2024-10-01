@@ -68,9 +68,10 @@ model QuizSetting {
   user   User   @relation(fields: [userId], references: [id])
   quiz   Quiz   @relation(fields: [quizId], references: [id])
 
-  order       String @default("random")
-  readOption  String @default("none")
-  askingOrder String @default("question-to-answer")
+  order             String @default("random")
+  readOption        String @default("none")
+  askingOrder       String @default("question-to-answer")
+  difficultSetting  String @default("off")
   
   @@unique([userId, quizId])
 }
