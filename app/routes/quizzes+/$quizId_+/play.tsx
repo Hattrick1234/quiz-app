@@ -6,9 +6,11 @@ import {
 	getQuestionsByQuizId,
 	getQuizById,
 	getQuizSettings,
+	updateQuestionById,
 } from '#app/data/quiz.server.js'
 import {
 	AskingOrder,
+	DifficultSetting,
 	QuestionOrder,
 	QuestionReadOption,
 	type QuizQuestion,
@@ -40,9 +42,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		QuestionReadOption.None) as QuestionReadOption
 	const askingOrder = (settings?.askingOrder ||
 		AskingOrder.QuestionToAnswer) as AskingOrder
+	const difficultSetting = (settings?.difficultSetting ||
+		DifficultSetting.Off) as DifficultSetting
+
+	// Filter de vragen op basis van difficultSetting
+	let filteredQuestions = [...questions]
+	if (
+		difficultSetting === DifficultSetting.Manual ||
+		(difficultSetting === DifficultSetting.Automatic &&
+			questions.some(question => question.difficult === true)) // Controleer of er minstens één moeilijke vraag is
+	) {
+		filteredQuestions = filteredQuestions.filter(
+			question => question.difficult === true,
+		)
+	}
 
 	// Sorteer de vragen op basis van de gekozen volgorde
-	let sortedQuestions: QuizQuestion[] = [...questions].map(questionLine => ({
+	let sortedQuestions: QuizQuestion[] = filteredQuestions.map(questionLine => ({
 		...questionLine,
 		questionLanguage: quiz.questionLanguage, // Voeg standaard de vraag en antwoordtaal toe
 		answerLanguage: quiz.answerLanguage,
@@ -55,9 +71,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 	// Voeg taal toe op basis van askingOrder
 	sortedQuestions = sortedQuestions.map(questionLine => {
-		// let questionLanguage = quiz.questionLanguage
-		// let answerLanguage = quiz.answerLanguage
-
 		if (askingOrder === AskingOrder.AnswerToQuestion) {
 			return {
 				...questionLine,
@@ -86,21 +99,44 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		}
 	})
 
-	return json({ quiz, sortedQuestions, readOption, askingOrder })
+	return json({
+		quiz,
+		sortedQuestions,
+		readOption,
+		askingOrder,
+		difficultSetting,
+	})
+}
+
+export async function action({ request }: LoaderFunctionArgs) {
+	const formData = await request.formData()
+	const questionId = formData.get('questionId')
+	const updatedDifficult = formData.get('difficult') === 'true'
+
+	if (typeof questionId !== 'string') {
+		return json({ error: 'Invalid question ID' }, { status: 400 })
+	}
+
+	try {
+		await updateQuestionById(questionId, { difficult: updatedDifficult })
+		return json({ success: true })
+	} catch (error) {
+		console.log(error)
+		return json({ error: 'Failed to update question' }, { status: 500 })
+	}
 }
 
 export default function QuizPlayRoute() {
-	const { quiz, sortedQuestions, readOption } = useLoaderData<typeof loader>()
+	const { quiz, sortedQuestions, readOption, difficultSetting } =
+		useLoaderData<typeof loader>()
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-	const [userAnswer, setUserAnswer] = useState('')
 	const [feedback, setFeedback] = useState<string | null>(null)
-	const [revealedLetters, setRevealedLetters] = useState(0)
 	const [hasMoreQuestions, setHasMoreQuestions] = useState(true)
-	// Nieuwe staten voor score
-	const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0)
 	const [numberOfAnsweredQuestions, setNumberOfAnsweredQuestions] = useState(0)
+	const [numberOfCorrectAnswers, setNumberOfCorrectAnswers] = useState(0)
+	const [revealedLetters, setRevealedLetters] = useState(0)
+	const [userAnswer, setUserAnswer] = useState('')
 	const navigate = useNavigate()
-
 	// Ref voor het inputveld
 	const inputRef = useRef<HTMLInputElement>(null)
 
@@ -165,9 +201,9 @@ export default function QuizPlayRoute() {
 
 		if (currentQuestion) {
 			setNumberOfAnsweredQuestions(prev => prev + 1) // Verhoog het aantal beantwoorde vragen
-			if (
+			let isCorrect =
 				userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase()
-			) {
+			if (isCorrect) {
 				setFeedback('Correct!')
 				setNumberOfCorrectAnswers(prev => prev + 1) // Verhoog het aantal correcte antwoorden
 			} else {
@@ -179,6 +215,18 @@ export default function QuizPlayRoute() {
 				feedbackMessage += `${userAnswer.trim()} (jouw antwoord)\n${currentQuestion.answer} (goede antwoord)\n\n`
 
 				setFeedback(feedbackMessage)
+			}
+
+			// Als de difficultSetting op 'automatic' staat, pas de moeilijkheidsgraad aan
+			if (difficultSetting === 'automatic') {
+				const formData = new FormData()
+				formData.append('questionId', currentQuestion.id)
+				formData.append('difficult', isCorrect ? 'false' : 'true')
+
+				await fetch(`/quizzes/${quiz.id}/play`, {
+					method: 'POST',
+					body: formData,
+				})
 			}
 
 			// Wacht even voordat je de quiz als voltooid markeert
@@ -298,6 +346,24 @@ export default function QuizPlayRoute() {
 						className="rounded bg-gray-500 px-4 py-2 text-white"
 					>
 						Terug naar instellingen
+					</button>
+					<button
+						onClick={() => {
+							// Reset de relevante state handmatig voordat je opnieuw navigeert
+							setCurrentQuestionIndex(0)
+							setHasMoreQuestions(true)
+							setNumberOfCorrectAnswers(0)
+							setNumberOfAnsweredQuestions(0)
+							setUserAnswer('')
+							setFeedback('')
+
+							// Forceer opnieuw laden van de huidige route
+							navigate(`/quizzes/${quiz.id}/play`, { replace: true })
+						}}
+						// onClick={() => navigate(`/quizzes/${quiz.id}/play`)}
+						className="ml-2 rounded bg-lime-500 px-4 py-2 text-white"
+					>
+						Nog een keer deze quiz
 					</button>
 				</div>
 			)}

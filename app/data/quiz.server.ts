@@ -8,6 +8,62 @@ import {
 } from '#app/types/index.ts'
 import { prisma } from '#app/utils/db.server.ts'
 
+export async function getQuestionsByQuizId(quizId: string) {
+	return await prisma.question.findMany({
+		select: {
+			id: true,
+			orderIndex: true,
+			question: true,
+			answer: true,
+			difficult: true,
+		},
+		where: {
+			quizId: quizId,
+		},
+		orderBy: {
+			orderIndex: 'asc', // Sorteer de vragen op volgorde van de orderIndex
+		},
+	})
+}
+
+export async function addQuestion(quizId: string, question: QuestionSummary) {
+	const newQuestion = await prisma.question.create({
+		data: {
+			quizId,
+			orderIndex: question.orderIndex,
+			question: question.question,
+			answer: question.answer,
+			difficult: question.difficult,
+		},
+	})
+	return newQuestion
+}
+
+export async function updateQuestionById(
+	//alle velden die je niet aanlevert blijven hun huidige waarde behouden
+	questionId: string,
+	data: {
+		orderIndex?: number
+		question?: string
+		answer?: string
+		difficult?: boolean
+	},
+) {
+	try {
+		const updatedQuestion = await prisma.question.update({
+			where: { id: questionId },
+			data: {
+				...data,
+				updatedAt: new Date(), // Zorg dat `updatedAt` automatisch bijgewerkt wordt
+			},
+		})
+
+		return updatedQuestion
+	} catch (error) {
+		throw new Error(`Error updating question with ID ${questionId}: ${error}`)
+	}
+}
+
 export async function updateQuestions(
 	quizId: string,
 	questions: QuestionSummary[],
@@ -42,64 +98,11 @@ export async function deleteQuestions(questionId: string) {
 	}
 }
 
-export async function addQuestion(quizId: string, question: QuestionSummary) {
-	const newQuestion = await prisma.question.create({
-		data: {
-			quizId,
-			orderIndex: question.orderIndex,
-			question: question.question,
-			answer: question.answer,
-			difficult: question.difficult,
-		},
-	})
-	return newQuestion
-}
-
-// export async function addQuestion(quizId: string, question: QuestionSummary) {
-// 	// Zoek de hoogste orderIndex voor de opgegeven quizId
-// 	const highestOrderIndex = await prisma.question.findFirst({
-// 		where: { quizId },
-// 		orderBy: { orderIndex: 'desc' }, // Sorteer op hoogste orderIndex
-// 		select: { orderIndex: true }, // Alleen de orderIndex ophalen
-// 	})
-
-// 	// Bepaal de nieuwe orderIndex
-// 	const newOrderIndex = highestOrderIndex ? highestOrderIndex.orderIndex + 1 : 1
-
-// 	const newQuestion = await prisma.question.create({
-// 		data: {
-// 			quizId,
-// 			orderIndex: newOrderIndex,
-// 			question: question.question,
-// 			answer: question.answer,
-// 		},
-// 	})
-// 	return newQuestion
-// }
-
 export async function getQuizById(userId: string, quizId: string) {
 	return await prisma.quiz.findFirst({
 		where: {
 			id: quizId,
 			ownerId: userId,
-		},
-	})
-}
-
-export async function getQuestionsByQuizId(quizId: string) {
-	return await prisma.question.findMany({
-		select: {
-			id: true,
-			orderIndex: true,
-			question: true,
-			answer: true,
-			difficult: true,
-		},
-		where: {
-			quizId: quizId,
-		},
-		orderBy: {
-			orderIndex: 'asc', // Sorteer de vragen op volgorde van de orderIndex
 		},
 	})
 }
