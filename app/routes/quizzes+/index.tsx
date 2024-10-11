@@ -7,7 +7,7 @@ import {
 } from '@remix-run/node'
 import { Link, useLoaderData, useFetcher } from '@remix-run/react'
 import Papa from 'papaparse'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
 	createQuiz,
 	createQuizWithQuestions,
@@ -33,14 +33,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		where: {
 			ownerId: userId,
 		},
+		orderBy: { title: 'asc' },
 	})
-
-	// Zorg ervoor dat createdAt en updatedAt worden omgezet naar Date objecten
-	// const quizzesWithDateObjects = quizzes.map(quiz => ({
-	// 	...quiz,
-	// 	createdAt: new Date(quiz.createdAt),
-	// 	updatedAt: new Date(quiz.updatedAt),
-	// }))
 
 	return json(quizzes) // Retourneert de array van quizzes direct
 }
@@ -182,6 +176,21 @@ export default function UsersRoute() {
 	const [newTitle, setNewTitle] = useState<string>('')
 	const [questionLanguage, setQuestionLanguage] = useState<string>('nl')
 	const [answerLanguage, setAnswerLanguage] = useState<string>('nl')
+	const [filterLanguage, setFilterLanguage] = useState<string | null>(null)
+
+	// Functie voor het toepassen van de filter
+	const filteredQuizzes = quizzes.filter(quiz => {
+		if (!filterLanguage) return true // Geen filter, toon alles
+		// Nederlands filter: beide velden moeten 'nl' zijn
+		if (filterLanguage === 'nl') {
+			return quiz.questionLanguage === 'nl' && quiz.answerLanguage === 'nl'
+		}
+		//bij andere talen moet een van de talen overeenkomen met het filter
+		return (
+			quiz.questionLanguage === filterLanguage ||
+			quiz.answerLanguage === filterLanguage
+		)
+	})
 
 	const handleEditClick = (quiz: QuizType) => {
 		setEditingQuizId(quiz.id)
@@ -197,12 +206,74 @@ export default function UsersRoute() {
 		setAnswerLanguage('nl') // Reset naar default taal
 	}
 
+	const handleFilterClick = (language: string | null) => {
+		//opslaan en verwijderen van de filtertaal via local storage zodat als je later terugkomt naar deze pagina hij nog steeds weet wat laatste filterinstelling was
+		setFilterLanguage(language)
+		if (language) {
+			localStorage.setItem('quizFilterLanguage', language)
+		} else {
+			localStorage.removeItem('quizFilterLanguage') // Verwijder de filter als er geen filter is
+		}
+	}
+
+	useEffect(() => {
+		//Wanneer pagina ingeladen wordt eerst kijken of er al een filter in local storage staat, zo ja dan filter daarop zetten
+		const savedFilter = localStorage.getItem('quizFilterLanguage')
+		if (savedFilter) {
+			setFilterLanguage(savedFilter)
+		}
+	}, [])
+
 	return (
 		<div className="grid place-items-center">
 			<h1>Kies een overhoring of quiz uit:</h1>
 
+			{/* Filteropties */}
+			<div className="mb-4 flex space-x-2">
+				<button
+					onClick={() => handleFilterClick(null)}
+					className={`rounded px-4 py-2 ${
+						!filterLanguage ? 'bg-blue-500 text-white' : 'bg-gray-200'
+					}`}
+				>
+					Toon Alles
+				</button>
+				<button
+					onClick={() => handleFilterClick('nl')}
+					className={`rounded px-4 py-2 ${
+						filterLanguage === 'nl' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+					}`}
+				>
+					Nederlands
+				</button>
+				<button
+					onClick={() => handleFilterClick('en')}
+					className={`rounded px-4 py-2 ${
+						filterLanguage === 'en' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+					}`}
+				>
+					Engels
+				</button>
+				<button
+					onClick={() => handleFilterClick('fr')}
+					className={`rounded px-4 py-2 ${
+						filterLanguage === 'fr' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+					}`}
+				>
+					Frans
+				</button>
+				<button
+					onClick={() => handleFilterClick('de')}
+					className={`rounded px-4 py-2 ${
+						filterLanguage === 'de' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+					}`}
+				>
+					Duits
+				</button>
+			</div>
+
 			<ul id="quiz-list">
-				{quizzes.map(quiz => (
+				{filteredQuizzes.map(quiz => (
 					<li key={quiz.id} className="quiz flex items-center justify-between">
 						{editingQuizId === quiz.id ? (
 							<fetcher.Form method="post" className="flex items-center">
@@ -224,6 +295,7 @@ export default function UsersRoute() {
 									<option value="nl">Nederlands</option>
 									<option value="en">Engels</option>
 									<option value="fr">Frans</option>
+									<option value="de">Duits</option>
 								</select>
 								{/* Taal dropdown voor antwoord */}
 								<select
@@ -235,6 +307,7 @@ export default function UsersRoute() {
 									<option value="nl">Nederlands</option>
 									<option value="en">Engels</option>
 									<option value="fr">Frans</option>
+									<option value="de">Duits</option>
 								</select>
 
 								<button

@@ -139,6 +139,7 @@ export default function QuizPlayRoute() {
 	const navigate = useNavigate()
 	// Ref voor het inputveld
 	const inputRef = useRef<HTMLInputElement>(null)
+	const numberOfQuestions = sortedQuestions.length
 
 	// Controleer of currentQuestionIndex binnen het bereik van sortedQuestions ligt
 	const currentQuestion =
@@ -246,15 +247,47 @@ export default function QuizPlayRoute() {
 	}
 
 	const handleInsertDiacritic = (char: string) => {
-		setUserAnswer(prevAnswer => prevAnswer + char)
-		inputRef.current?.focus() // Breng focus terug naar het inputveld
+		//voegt de diakriet toe op de plaats van de cursor
+		if (inputRef.current) {
+			const input = inputRef.current
+			const start = input.selectionStart || 0
+			const end = input.selectionEnd || 0
+
+			// Huidige waarde splitsen op basis van cursorpositie
+			const updatedAnswer =
+				userAnswer.slice(0, start) + char + userAnswer.slice(end)
+
+			// Werk de antwoord state bij met het nieuwe antwoord
+			setUserAnswer(updatedAnswer)
+
+			// Zorg ervoor dat de cursor na het ingevoegde teken blijft staan
+			// (caret position wordt één plaats na het ingevoegde karakter)
+			setTimeout(() => {
+				input.setSelectionRange(start + char.length, start + char.length)
+			}, 0)
+
+			// Breng focus terug naar het inputveld
+			input.focus()
+		}
 	}
 
 	const handleRevealLetter = () => {
 		if (currentQuestion) {
+			//leegmaken wat je had ingevuld zodat hij de letter toont in de placeholdertekst
+			setUserAnswer('')
 			setRevealedLetters(prev =>
 				Math.min(prev + 1, currentQuestion.answer.length),
 			)
+			inputRef.current?.focus()
+		}
+	}
+
+	const handleRevealWord = () => {
+		if (currentQuestion) {
+			//leegmaken wat je had ingevuld zodat hij de letter toont in de placeholdertekst
+			setUserAnswer('')
+			setRevealedLetters(currentQuestion.answer.length)
+			inputRef.current?.focus()
 		}
 	}
 
@@ -263,6 +296,10 @@ export default function QuizPlayRoute() {
 			<h1 className="my-4 text-2xl font-bold">Quiz: {quiz.title}</h1>
 			{/* Score weergave */}
 			<div className="my-4">
+				<p>
+					Nog te gaan: {numberOfQuestions - numberOfAnsweredQuestions} vragen
+					van totaal {numberOfQuestions} vragen.
+				</p>
 				<p>
 					Score: {scorePercentage}% ({numberOfCorrectAnswers}/
 					{numberOfAnsweredQuestions})
@@ -287,10 +324,16 @@ export default function QuizPlayRoute() {
 							<button
 								type="button"
 								onClick={handleRevealLetter}
-								//className="ml-2 rounded bg-yellow-500 px-4 py-2 text-white"
 								className="mb-4 ml-2 flex items-center rounded bg-yellow-500 px-4 py-2 text-white"
 							>
-								Toon een letter (indien niks is ingevuld)
+								Toon (extra) letter
+							</button>
+							<button
+								type="button"
+								onClick={handleRevealWord}
+								className="mb-4 ml-2 flex items-center rounded bg-teal-600 px-4 py-2 text-white"
+							>
+								Toon hele woord
 							</button>
 						</div>
 
