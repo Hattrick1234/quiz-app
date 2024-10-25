@@ -88,11 +88,60 @@ export async function action({ request }: ActionFunctionArgs) {
 			const parsedResult = Papa.parse<CSVQuestion>(content, {
 				header: true,
 				delimiter: ';', //scheidingsteken in de csv
+				dynamicTyping: true,
+				skipEmptyLines: true,
+				transformHeader: header => header.trim(), // Zorgt dat header wordt gelezen zonder quotes
 			})
-			questions = parsedResult.data // Pak de data uit de parse-resultaten
+			// questions = parsedResult.data // Pak de data uit de parse-resultaten
+
+			// Identificeer de headernamen van de eerste regel
+			const [firstRow] = parsedResult.data
+			const headers = Object.keys(firstRow || {})
+
+			if (headers.length < 2) {
+				return json(
+					{
+						error:
+							'CSV must contain at least two columns for questions and answers.',
+					},
+					{ status: 400 },
+				)
+			}
+
+			// Verwacht de eerste twee kolommen als de vraag- en antwoordvelden
+			const [questionKey, answerKey] = headers
+
+			// // Map de headers naar de standaard `question` en `answer` met `orderIndex`
+			// questions = parsedResult.data.map((row: any, index: number) => ({
+			// 	orderIndex: index,
+			// 	// question: row[questionKey],
+			// 	// answer: row[answerKey],
+			// 	question: row[questionKey] ?? '', // Voeg een fallback toe voor veiligheid
+			// 	answer: row[answerKey] ?? '', // Voeg een fallback toe voor veiligheid
+			// }))
+
+			// Controleer of questionKey en answerKey strings zijn voordat ze worden gebruikt
+			if (typeof questionKey === 'string' && typeof answerKey === 'string') {
+				questions = parsedResult.data.map((row: any, index: number) => ({
+					orderIndex: index,
+					question: row[questionKey] ?? '', // Voeg een fallback toe voor veiligheid
+					answer: row[answerKey] ?? '', // Voeg een fallback toe voor veiligheid
+				}))
+			} else {
+				return json(
+					{ error: 'Failed to parse CSV: Invalid headers.' },
+					{ status: 400 },
+				)
+			}
+
+			console.log(`questions array ziet er zo uit:`)
+			console.log(questions)
 
 			// Filter out empty rows
 			questions = questions.filter(q => q.question?.trim() && q.answer?.trim())
+
+			console.log(`questions array ziet er zo uit:`)
+			console.log(questions)
 
 			// Check if questions array is empty
 			if (questions.length === 0) {

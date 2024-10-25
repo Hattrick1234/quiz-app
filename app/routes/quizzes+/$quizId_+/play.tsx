@@ -167,6 +167,11 @@ export default function QuizPlayRoute() {
 		}
 	}
 
+	useEffect(() => {
+		//Focus gelijk zetten in het invoerveld bij starten van het scherm
+		inputRef.current?.focus()
+	}, []) // Lege dependency-array zodat dit alleen bij de eerste render wordt uitgevoerd
+
 	// Effect om de vraag automatisch voor te lezen op basis van readOption
 	useEffect(() => {
 		// Controleer of huidige vraag beschikbaar is en spraakweergave wordt ondersteund
