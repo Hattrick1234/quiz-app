@@ -65,6 +65,18 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ newQuiz })
 	}
 
+	// if (intent === 'uploadCsv') {
+	// 	// Maak een absolute URL aan
+	// 	const baseUrl = new URL(request.url).origin
+	// 	const apiUrl = `${baseUrl}/api/upload-quiz`
+
+	// 	// Voer de fetch-aanroep uit naar de absolute URL
+	// 	const apiResponse = await fetch(apiUrl, {
+	// 		method: 'POST',
+	// 		body: formData,
+	// 	})
+	// }
+
 	if (intent === 'uploadCsv') {
 		const file = formData.get('csvFile') as File
 		console.log('File is: ' + file)
@@ -112,14 +124,6 @@ export async function action({ request }: ActionFunctionArgs) {
 			const [questionKey, answerKey] = headers
 
 			// // Map de headers naar de standaard `question` en `answer` met `orderIndex`
-			// questions = parsedResult.data.map((row: any, index: number) => ({
-			// 	orderIndex: index,
-			// 	// question: row[questionKey],
-			// 	// answer: row[answerKey],
-			// 	question: row[questionKey] ?? '', // Voeg een fallback toe voor veiligheid
-			// 	answer: row[answerKey] ?? '', // Voeg een fallback toe voor veiligheid
-			// }))
-
 			// Controleer of questionKey en answerKey strings zijn voordat ze worden gebruikt
 			if (typeof questionKey === 'string' && typeof answerKey === 'string') {
 				questions = parsedResult.data.map((row: any, index: number) => ({

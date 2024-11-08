@@ -19,7 +19,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		return json({ error: 'Quiz not found' }, { status: 404 })
 	}
 
-	const fields = ['question', 'answer']
+	// Gebruik questionLanguage en answerLanguage als dynamische headers
+	const questionHeader = quiz.questionLanguage || 'question'
+	const answerHeader = quiz.answerLanguage || 'answer'
+
+	// const fields = ['question', 'answer']
+	// Stel de velden dynamisch in op basis van de taal van de quiz
+	const fields = [
+		{ label: questionHeader, value: 'question' },
+		{ label: answerHeader, value: 'answer' },
+	]
 	const opts = { fields, delimiter: ';' }
 
 	try {
