@@ -6,17 +6,12 @@ import {
 	type ActionFunctionArgs,
 } from '@remix-run/node'
 import { Link, useLoaderData, useFetcher } from '@remix-run/react'
-import Papa from 'papaparse'
 import { useEffect, useState } from 'react'
-import {
-	createQuiz,
-	createQuizWithQuestions,
-	deleteQuiz,
-	updateQuiz,
-} from '#app/data/quiz.server.ts'
-import { type QuizType, type CSVQuestion } from '#app/types/index.js'
+import { createQuiz, deleteQuiz, updateQuiz } from '#app/data/quiz.server.ts'
+import { type QuizType } from '#app/types/index.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { prisma } from '#app/utils/db.server.ts'
+import { handleCsvUpload } from '#app/utils/handleCsvUpload.ts'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -44,7 +39,6 @@ export async function action({ request }: ActionFunctionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const intent = formData.get('intent')
-	const defaultLanguage = 'nl'
 	console.log(`Intent is: ${intent}`)
 
 	if (intent === 'create') {
@@ -65,119 +59,8 @@ export async function action({ request }: ActionFunctionArgs) {
 		return json({ newQuiz })
 	}
 
-	// if (intent === 'uploadCsv') {
-	// 	// Maak een absolute URL aan
-	// 	const baseUrl = new URL(request.url).origin
-	// 	const apiUrl = `${baseUrl}/api/upload-quiz`
-
-	// 	// Voer de fetch-aanroep uit naar de absolute URL
-	// 	const apiResponse = await fetch(apiUrl, {
-	// 		method: 'POST',
-	// 		body: formData,
-	// 	})
-	// }
-
 	if (intent === 'uploadCsv') {
-		const file = formData.get('csvFile') as File
-		console.log('File is: ' + file)
-		if (!file) {
-			return json({ error: 'CSV file is required' }, { status: 400 })
-		}
-
-		const content = await file.text()
-
-		// Check if file content is empty
-		if (!content.trim()) {
-			console.log('CSV file is leeg')
-			return json({ error: 'CSV file is empty' }, { status: 400 })
-		}
-
-		const title = file.name.replace('.csv', '')
-
-		let questions: CSVQuestion[]
-		try {
-			// Gebruik PapaParse om CSV-string naar JSON te converteren en typ de output correct
-			const parsedResult = Papa.parse<CSVQuestion>(content, {
-				header: true,
-				delimiter: ';', //scheidingsteken in de csv
-				dynamicTyping: true,
-				skipEmptyLines: true,
-				transformHeader: header => header.trim(), // Zorgt dat header wordt gelezen zonder quotes
-			})
-			// questions = parsedResult.data // Pak de data uit de parse-resultaten
-
-			// Identificeer de headernamen van de eerste regel
-			const [firstRow] = parsedResult.data
-			const headers = Object.keys(firstRow || {})
-
-			if (headers.length < 2) {
-				return json(
-					{
-						error:
-							'CSV must contain at least two columns for questions and answers.',
-					},
-					{ status: 400 },
-				)
-			}
-
-			// Verwacht de eerste twee kolommen als de vraag- en antwoordvelden
-			const [questionKey, answerKey] = headers
-
-			// // Map de headers naar de standaard `question` en `answer` met `orderIndex`
-			// Controleer of questionKey en answerKey strings zijn voordat ze worden gebruikt
-			if (typeof questionKey === 'string' && typeof answerKey === 'string') {
-				questions = parsedResult.data.map((row: any, index: number) => ({
-					orderIndex: index,
-					question: row[questionKey] ?? '', // Voeg een fallback toe voor veiligheid
-					answer: row[answerKey] ?? '', // Voeg een fallback toe voor veiligheid
-				}))
-			} else {
-				return json(
-					{ error: 'Failed to parse CSV: Invalid headers.' },
-					{ status: 400 },
-				)
-			}
-
-			console.log(`questions array ziet er zo uit:`)
-			console.log(questions)
-
-			// Filter out empty rows
-			questions = questions.filter(q => q.question?.trim() && q.answer?.trim())
-
-			console.log(`questions array ziet er zo uit:`)
-			console.log(questions)
-
-			// Check if questions array is empty
-			if (questions.length === 0) {
-				console.log('Geen geldige vragen gevonden in de CSV file')
-				return json(
-					{ error: 'No valid questions found in CSV file' },
-					{ status: 400 },
-				)
-			}
-
-			//Converteer de questions en kijk of geldig question en answer formaten betreft
-			questions = questions.map((q, index) => ({
-				orderIndex: index,
-				question: q.question,
-				answer: q.answer,
-			}))
-		} catch (error) {
-			return json(
-				{ error: 'Failed to parse CSV', details: (error as Error).message },
-				{ status: 400 },
-			)
-		}
-
-		const newQuiz = await createQuizWithQuestions(
-			title,
-			userId,
-			defaultLanguage,
-			defaultLanguage,
-			questions,
-		)
-
-		return json({ newQuiz })
+		return handleCsvUpload(formData, userId)
 	}
 
 	//onderstaande acties hebben een quizid nodig stop als die er niet is
