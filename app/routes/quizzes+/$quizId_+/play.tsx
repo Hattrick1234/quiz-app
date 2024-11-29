@@ -1,6 +1,6 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
 import { useLoaderData, Form, useNavigate } from '@remix-run/react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import DiacriticsInput from '#app/components/diacriticsInput.js'
 import {
 	getQuestionsByQuizId,
@@ -176,12 +176,40 @@ export default function QuizPlayRoute() {
 		inputRef.current?.focus()
 	}, []) // Lege dependency-array zodat dit alleen bij de eerste render wordt uitgevoerd
 
+	// // eslint-disable-next-line react-hooks/exhaustive-deps
+	// useEffect(() => {
+	// 	//Toon antwoord in hinttekst indien deze instelling is gezet
+	// 	if (showAnswerAtStart) {
+	// 		handleRevealWord()
+	// 	}
+	// }, [showAnswerAtStart, currentQuestion])
+
+	useEffect(() => {
+		if (showAnswerAtStart) {
+			const handleRevealWord = () => {
+				if (currentQuestion) {
+					setUserAnswer('')
+					setRevealedLetters(currentQuestion.answer.length)
+					inputRef.current?.focus()
+				}
+			}
+
+			handleRevealWord()
+		}
+	}, [
+		showAnswerAtStart,
+		currentQuestion,
+		setUserAnswer,
+		setRevealedLetters,
+		inputRef,
+	]) // Alle afhankelijkheden
+
 	// Effect om bij elke nieuwe vraag hinttekst en voorleesgedrag uit te voeren
 	useEffect(() => {
 		//Toon antwoord in hinttekst indien deze instelling is gezet
-		if (showAnswerAtStart) {
-			handleRevealWord()
-		}
+		// if (showAnswerAtStart) {
+		// 	handleRevealWord()
+		// }
 		// Controleer of huidige vraag beschikbaar is en spraakweergave wordt ondersteund
 		if (currentQuestion && 'speechSynthesis' in window) {
 			// Check de optie voor het voorlezen van de vraag
@@ -295,14 +323,14 @@ export default function QuizPlayRoute() {
 		}
 	}
 
-	const handleRevealWord = () => {
+	const handleRevealWord = useCallback(() => {
 		if (currentQuestion) {
 			//leegmaken wat je had ingevuld zodat hij de letter toont in de placeholdertekst
 			setUserAnswer('')
 			setRevealedLetters(currentQuestion.answer.length)
 			inputRef.current?.focus()
 		}
-	}
+	}, [currentQuestion])
 
 	return (
 		<div className="container mx-auto px-4">
