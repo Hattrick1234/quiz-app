@@ -38,9 +38,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		AskingOrder.QuestionToAnswer) as AskingOrder
 	const difficultSetting = (settings?.difficultSetting ??
 		DifficultSetting.Off) as DifficultSetting
+	const showAnswerAtStart = (settings?.showAnswerAtStart ?? false) as boolean
 
 	console.log(readOption)
-	return { quiz, userId, order, readOption, askingOrder, difficultSetting }
+	return {
+		quiz,
+		userId,
+		order,
+		readOption,
+		askingOrder,
+		difficultSetting,
+		showAnswerAtStart,
+	}
 }
 
 // Voeg de action toe voor het opslaan van instellingen
@@ -53,6 +62,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 	const readOption = formData.get('readOption') as QuestionReadOption // Verkrijg de voorleesoptie van de form
 	const askingOrder = formData.get('askingOrder') as AskingOrder // Verkrijg de NL->EN, EN->NL of mix optie van de form
 	const difficultSetting = formData.get('difficultOption') as DifficultSetting // Off, manual, automatic
+	const showAnswerAtStart = formData.get('showAnswerAtStart') === 'on'
 
 	if (!quizId) {
 		throw new Response('Quiz ID is required', { status: 400 })
@@ -66,14 +76,21 @@ export async function action({ request, params }: LoaderFunctionArgs) {
 		readOption,
 		askingOrder,
 		difficultSetting,
+		showAnswerAtStart,
 	)
 
 	return redirect(`/quizzes/${quizId}/play`) // Verwijs naar de play-pagina
 }
 
 export default function QuizStartRoute() {
-	const { quiz, order, readOption, askingOrder, difficultSetting } =
-		useLoaderData<typeof loader>()
+	const {
+		quiz,
+		order,
+		readOption,
+		askingOrder,
+		difficultSetting,
+		showAnswerAtStart,
+	} = useLoaderData<typeof loader>()
 	const [selectedOrder, setSelectedOrder] = useState<QuestionOrder>(order) // Gebruik de opgehaalde volgorde
 	const [selectedReadOption, setSelectedReadOption] =
 		useState<QuestionReadOption>(readOption)
@@ -81,6 +98,8 @@ export default function QuizStartRoute() {
 		useState<AskingOrder>(askingOrder)
 	const [selectedDifficultOption, setSelectedDifficultOption] =
 		useState<DifficultSetting>(difficultSetting)
+	const [selectedShowAnswerAtStart, setSelectedShowAnswerAtStart] =
+		useState(showAnswerAtStart)
 
 	return (
 		<div className="container mx-auto px-4">
@@ -344,6 +363,32 @@ export default function QuizStartRoute() {
 								antwoorden van de laatste quiz
 							</label>
 						</div>
+					</div>
+				</div>
+
+				{/* Sectie voor gelijk hele woord tonen */}
+				<div className="my-4">
+					<label className="block text-sm font-medium text-gray-700">
+						Oefenmodus door hele woord aan begin te tonen
+					</label>
+
+					<div className="flex items-center">
+						<input
+							id="showAnswerAtStart"
+							name="showAnswerAtStart"
+							type="checkbox"
+							checked={selectedShowAnswerAtStart}
+							onChange={() =>
+								setSelectedShowAnswerAtStart(!selectedShowAnswerAtStart)
+							}
+							className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+						/>
+						<label
+							htmlFor="showAnswerAtStart"
+							className="ml-3 block text-sm text-gray-700"
+						>
+							Het antwoord aan het begin als hint tonen?
+						</label>
 					</div>
 				</div>
 

@@ -208,6 +208,7 @@ export async function saveQuizSettings(
 	readOption: QuestionReadOption,
 	askingOrder: AskingOrder,
 	difficultSetting: DifficultSetting,
+	showAnswerAtStart: boolean,
 ) {
 	return await prisma.quizSetting.upsert({
 		where: {
@@ -221,6 +222,7 @@ export async function saveQuizSettings(
 			readOption,
 			askingOrder,
 			difficultSetting,
+			showAnswerAtStart,
 		},
 		create: {
 			userId,
@@ -229,6 +231,7 @@ export async function saveQuizSettings(
 			readOption,
 			askingOrder,
 			difficultSetting,
+			showAnswerAtStart,
 		},
 	})
 }

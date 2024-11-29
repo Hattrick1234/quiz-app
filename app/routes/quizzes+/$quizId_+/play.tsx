@@ -44,6 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		AskingOrder.QuestionToAnswer) as AskingOrder
 	const difficultSetting = (settings?.difficultSetting ||
 		DifficultSetting.Off) as DifficultSetting
+	const showAnswerAtStart = (settings?.showAnswerAtStart || false) as boolean
 
 	// Filter de vragen op basis van difficultSetting
 	let filteredQuestions = [...questions]
@@ -105,6 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		readOption,
 		askingOrder,
 		difficultSetting,
+		showAnswerAtStart,
 	})
 }
 
@@ -127,8 +129,13 @@ export async function action({ request }: LoaderFunctionArgs) {
 }
 
 export default function QuizPlayRoute() {
-	const { quiz, sortedQuestions, readOption, difficultSetting } =
-		useLoaderData<typeof loader>()
+	const {
+		quiz,
+		sortedQuestions,
+		readOption,
+		difficultSetting,
+		showAnswerAtStart,
+	} = useLoaderData<typeof loader>()
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 	const [feedback, setFeedback] = useState<string | null>(null)
 	const [hasMoreQuestions, setHasMoreQuestions] = useState(true)
@@ -147,8 +154,6 @@ export default function QuizPlayRoute() {
 			? sortedQuestions[currentQuestionIndex]
 			: null
 
-	// console.log(currentQuestion)
-
 	// Bereken percentage correcte antwoorden
 	const scorePercentage =
 		numberOfAnsweredQuestions > 0
@@ -159,7 +164,6 @@ export default function QuizPlayRoute() {
 	const handleReadQuestion = () => {
 		if (currentQuestion && 'speechSynthesis' in window) {
 			const utterance = new SpeechSynthesisUtterance(currentQuestion.question)
-			//utterance.lang = quiz.questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
 			utterance.lang = currentQuestion.questionLanguage // .questionLanguage //Stel de taal in naar bijv. Frans fr, Engels en of Nederlands nl
 			window.speechSynthesis.speak(utterance)
 		} else {
@@ -172,8 +176,12 @@ export default function QuizPlayRoute() {
 		inputRef.current?.focus()
 	}, []) // Lege dependency-array zodat dit alleen bij de eerste render wordt uitgevoerd
 
-	// Effect om de vraag automatisch voor te lezen op basis van readOption
+	// Effect om bij elke nieuwe vraag hinttekst en voorleesgedrag uit te voeren
 	useEffect(() => {
+		//Toon antwoord in hinttekst indien deze instelling is gezet
+		if (showAnswerAtStart) {
+			handleRevealWord()
+		}
 		// Controleer of huidige vraag beschikbaar is en spraakweergave wordt ondersteund
 		if (currentQuestion && 'speechSynthesis' in window) {
 			// Check de optie voor het voorlezen van de vraag

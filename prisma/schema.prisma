@@ -72,6 +72,7 @@ model QuizSetting {
   readOption        String @default("none")
   askingOrder       String @default("question-to-answer")
   difficultSetting  String @default("off")
+  showAnswerAtStart Boolean @default(false)
   
   @@unique([userId, quizId])
 }
