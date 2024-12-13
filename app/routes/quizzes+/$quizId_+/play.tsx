@@ -70,17 +70,47 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 		sortedQuestions = sortedQuestions.reverse()
 	}
 
+	// // Voeg taal toe op basis van askingOrder
+	// sortedQuestions = sortedQuestions.map(questionLine => {
+	// 	if (askingOrder === AskingOrder.AnswerToQuestion) {
+	// 		return {
+	// 			...questionLine,
+	// 			question: questionLine.answer,
+	// 			answer: questionLine.question,
+	// 			questionLanguage: quiz.answerLanguage, // Inverteer de talen
+	// 			answerLanguage: quiz.questionLanguage,
+	// 		}
+	// 	} else if (askingOrder === AskingOrder.Mix) {
+	// 		const shouldSwap = Math.random() >= 0.5
+	// 		if (shouldSwap) {
+	// 			return {
+	// 				...questionLine,
+	// 				question: questionLine.answer,
+	// 				answer: questionLine.question,
+	// 				questionLanguage: quiz.answerLanguage, // Verwissel talen als de vragen worden omgedraaid
+	// 				answerLanguage: quiz.questionLanguage,
+	// 			}
+	// 		}
+	// 	}
+
+	// 	return {
+	// 		...questionLine,
+	// 		questionLanguage: quiz.questionLanguage,
+	// 		answerLanguage: quiz.answerLanguage,
+	// 	}
+	// })
+
 	// Voeg taal toe op basis van askingOrder
-	sortedQuestions = sortedQuestions.map(questionLine => {
-		if (askingOrder === AskingOrder.AnswerToQuestion) {
-			return {
-				...questionLine,
-				question: questionLine.answer,
-				answer: questionLine.question,
-				questionLanguage: quiz.answerLanguage, // Inverteer de talen
-				answerLanguage: quiz.questionLanguage,
-			}
-		} else if (askingOrder === AskingOrder.Mix) {
+	if (askingOrder === AskingOrder.AnswerToQuestion) {
+		sortedQuestions = sortedQuestions.map(questionLine => ({
+			...questionLine,
+			question: questionLine.answer,
+			answer: questionLine.question,
+			questionLanguage: quiz.answerLanguage, // Inverteer de talen
+			answerLanguage: quiz.questionLanguage,
+		}))
+	} else if (askingOrder === AskingOrder.Mix) {
+		sortedQuestions = sortedQuestions.map(questionLine => {
 			const shouldSwap = Math.random() >= 0.5
 			if (shouldSwap) {
 				return {
@@ -91,14 +121,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 					answerLanguage: quiz.questionLanguage,
 				}
 			}
-		}
+			return questionLine
+		})
+	} else if (askingOrder === AskingOrder.AllBothDirections) {
+		// Voeg zowel QuestionToAnswer als AnswerToQuestion toe
+		const allQuestions: QuizQuestion[] = []
 
-		return {
-			...questionLine,
-			questionLanguage: quiz.questionLanguage,
-			answerLanguage: quiz.answerLanguage,
+		sortedQuestions.forEach(questionLine => {
+			allQuestions.push({
+				...questionLine,
+				questionLanguage: quiz.questionLanguage,
+				answerLanguage: quiz.answerLanguage,
+			})
+			allQuestions.push({
+				...questionLine,
+				question: questionLine.answer,
+				answer: questionLine.question,
+				questionLanguage: quiz.answerLanguage,
+				answerLanguage: quiz.questionLanguage,
+			})
+		})
+
+		sortedQuestions = allQuestions
+		if (order === QuestionOrder.Random) {
+			sortedQuestions = sortedQuestions.sort(() => Math.random() - 0.5)
 		}
-	})
+	}
 
 	return json({
 		quiz,
@@ -175,14 +223,6 @@ export default function QuizPlayRoute() {
 		//Focus gelijk zetten in het invoerveld bij starten van het scherm
 		inputRef.current?.focus()
 	}, []) // Lege dependency-array zodat dit alleen bij de eerste render wordt uitgevoerd
-
-	// // eslint-disable-next-line react-hooks/exhaustive-deps
-	// useEffect(() => {
-	// 	//Toon antwoord in hinttekst indien deze instelling is gezet
-	// 	if (showAnswerAtStart) {
-	// 		handleRevealWord()
-	// 	}
-	// }, [showAnswerAtStart, currentQuestion])
 
 	useEffect(() => {
 		if (showAnswerAtStart) {

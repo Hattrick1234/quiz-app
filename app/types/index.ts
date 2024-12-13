@@ -45,6 +45,7 @@ export enum AskingOrder {
 	QuestionToAnswer = 'question-to-answer',
 	AnswerToQuestion = 'answer-to-question',
 	Mix = 'mix',
+	AllBothDirections = 'all-both-directions',
 }
 
 export enum DifficultSetting {

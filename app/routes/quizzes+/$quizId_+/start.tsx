@@ -33,11 +33,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 	const settings = await getQuizSettings(userId, quizId)
 	const order = (settings?.order ?? QuestionOrder.Random) as QuestionOrder
 	const readOption = (settings?.readOption ??
-		QuestionReadOption.None) as QuestionReadOption
+		QuestionReadOption.ReadWithQuestion) as QuestionReadOption
 	const askingOrder = (settings?.askingOrder ??
 		AskingOrder.QuestionToAnswer) as AskingOrder
 	const difficultSetting = (settings?.difficultSetting ??
-		DifficultSetting.Off) as DifficultSetting
+		DifficultSetting.Automatic) as DifficultSetting
 	const showAnswerAtStart = (settings?.showAnswerAtStart ?? false) as boolean
 
 	console.log(readOption)
@@ -229,6 +229,28 @@ export default function QuizStartRoute() {
 							>
 								Mix. --- Bijv. enkele vragen in Engels en enkele in
 								Nederlands.---
+							</label>
+						</div>
+						<div className="flex items-center">
+							<input
+								id={AskingOrder.AllBothDirections}
+								name="askingOrder"
+								type="radio"
+								value={AskingOrder.AllBothDirections}
+								checked={
+									selectedQuestionAnswerOrder === AskingOrder.AllBothDirections
+								}
+								onChange={() =>
+									setSelectedQuestionAnswerOrder(AskingOrder.AllBothDirections)
+								}
+								className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+							/>
+							<label
+								htmlFor={AskingOrder.AllBothDirections}
+								className="ml-3 block text-sm text-gray-700"
+							>
+								Alles 2 kanten op --- bijv. Nederlands naar Engels en
+								andersom.---
 							</label>
 						</div>
 					</div>
