@@ -293,8 +293,8 @@ export default function QuizPlayRoute() {
 				let feedbackMessage = 'Helaas:\n'
 
 				// Voeg de vraag toe
+				feedbackMessage += `${userAnswer.trim()} (jouw antwoord)\n${currentQuestion.answer} (goede antwoord)\n`
 				feedbackMessage += `De vraag was: ${currentQuestion.question}\n`
-				feedbackMessage += `${userAnswer.trim()} (jouw antwoord)\n${currentQuestion.answer} (goede antwoord)\n\n`
 
 				setFeedback(feedbackMessage)
 			}
@@ -374,9 +374,9 @@ export default function QuizPlayRoute() {
 
 	return (
 		<div className="container mx-auto px-4">
-			<h1 className="my-4 text-2xl font-bold">Quiz: {quiz.title}</h1>
+			<h4 className="text-2xl font-bold">Quiz: {quiz.title}</h4>
 			{/* Score weergave */}
-			<div className="my-4">
+			<div className="mb-2">
 				<p>
 					Nog te gaan: {numberOfQuestions - numberOfAnsweredQuestions} vragen
 					van totaal {numberOfQuestions} vragen.
@@ -392,12 +392,12 @@ export default function QuizPlayRoute() {
 					<div>
 						{/* Toon vraag afhankelijk van de voorleesoptie */}
 						{readOption !== QuestionReadOption.ReadWithoutQuestion && (
-							<h2 className="my-4 text-xl">{currentQuestion.question}</h2>
+							<h2 className="text-xl">{currentQuestion.question}</h2>
 						)}
-						<div className="mb-4 flex">
+						<div className="mb-2 flex">
 							<button
 								onClick={handleReadQuestion}
-								className="mb-4 flex items-center rounded bg-green-500 px-4 py-2 text-white"
+								className="mb-2 flex items-center rounded bg-green-500 px-4 py-2 text-white"
 							>
 								{/* Unicode karakter voor luidspreker icoon */}
 								<span className="mr-2">🔊</span> Lees de vraag voor
@@ -405,14 +405,14 @@ export default function QuizPlayRoute() {
 							<button
 								type="button"
 								onClick={handleRevealLetter}
-								className="mb-4 ml-2 flex items-center rounded bg-yellow-500 px-4 py-2 text-white"
+								className="mb-2 ml-2 flex items-center rounded bg-yellow-500 px-4 py-2 text-white"
 							>
 								Toon (extra) letter
 							</button>
 							<button
 								type="button"
 								onClick={handleRevealWord}
-								className="mb-4 ml-2 flex items-center rounded bg-teal-600 px-4 py-2 text-white"
+								className="mb-2 ml-2 flex items-center rounded bg-teal-600 px-4 py-2 text-white"
 							>
 								Toon hele woord
 							</button>
