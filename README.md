@@ -2,6 +2,11 @@ Lokaal installeren en draaien door:
 
 - zorg ervoor dat je npm hebt geinstalleerd op je computer
 - in een terminal: npm install uitvoeren
+- kopieer .env.example naar .env file en vul waarden in voor SESSION_SECRET en
+  INTERNAL_COMMAND_TOKEN (mogelijk dat de dummywaarden uit de oorspronkelijke
+  file ook werken)
+- kopieer een gevulde prisma\data.db bestand met user en quizdata anders begin
+  je met een lege database en moet je de database van scratch invullen
 - in een terminal: npm run dev
 - ga naar de opgestarte link in je terminal om de applicatie te starten, veelal
   http://localhost:3000
