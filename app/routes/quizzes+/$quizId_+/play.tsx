@@ -287,10 +287,10 @@ export default function QuizPlayRoute() {
 			    userAnswer
  		       .trim()
  		       .toLowerCase()
- 		       .replace(/[`']/g, '"') === // Vervang zowel ` als ' door "
+ 		       .replace(/[`'’]/g, '"') === // Vervang zowel ` als ' door "
 		    currentQuestion.answer
 		        .toLowerCase()
- 		       .replace(/[`']/g, '"') // Vervang zowel ` als ' door "
+ 		       .replace(/[`'’]/g, '"') // Vervang zowel ` als ' door "
 			if (isCorrect) {
 				setFeedback('Correct!')
 				setNumberOfCorrectAnswers(prev => prev + 1) // Verhoog het aantal correcte antwoorden
