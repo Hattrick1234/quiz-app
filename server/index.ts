@@ -212,7 +212,7 @@ if (!ALLOW_INDEXING) {
 
 app.all(
 	'*',
-	createRequestHandler({
+	(createRequestHandler as typeof _createRequestHandler)({
 		getLoadContext: (_: any, res: any) => ({
 			cspNonce: res.locals.cspNonce,
 			serverBuild: getBuild(),
